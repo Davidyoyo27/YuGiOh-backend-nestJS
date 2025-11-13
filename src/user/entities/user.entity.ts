@@ -1,4 +1,5 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { UserType } from "./user-type.entity";
 
 @Entity()
 export class User {
@@ -42,5 +43,13 @@ export class User {
         default: () => 'CURRENT_TIMESTAMP' 
     })
     date_created: Date;
+
+    // relacion
+    @ManyToOne(
+        () => UserType,
+        (userType) => userType.userRelation,
+        { cascade: true, eager: true }
+    )
+    typeUser: UserType;
 
 }
