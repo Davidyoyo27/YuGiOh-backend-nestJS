@@ -5,6 +5,8 @@ import {
 import { Match } from "../decorators/match.decorator";
 import { IsOnlyLetters } from "../decorators/only-letters.decorator";
 import { Transform } from "class-transformer";
+import { IsEmailUnique } from "../decorators/validators/is-email-unique.validator"
+import { IsNickNameUnique } from "../decorators/validators/is-nickname-unique.validator"
 
 export class CreateUserDto {
 
@@ -15,6 +17,7 @@ export class CreateUserDto {
         },
         { message: 'Debe ingresar un correo valido' }
     )
+    @IsEmailUnique()
     email: string;
 
     @MinLength(6, { message: 'La contraseña debe tener minimo 6 caracteres' })
@@ -30,7 +33,6 @@ export class CreateUserDto {
     @IsString()
     @IsNotEmpty({ message: 'Debe ingresar un nombre' })
     @IsOnlyLetters('El nombre solo puede contener letras')
-    // @Match('^[A-Za-zÁÉÍÓÚáéíóúÑñ]+$')
     name: string;
 
     @IsString()
@@ -41,6 +43,7 @@ export class CreateUserDto {
 
     @IsString()
     @IsOptional()
+    @IsNickNameUnique()
     nickName?: string;
 
 }
