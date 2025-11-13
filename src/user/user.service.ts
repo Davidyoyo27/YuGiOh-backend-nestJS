@@ -113,13 +113,14 @@ export class UserService {
 
     const user = await this.userRepository.findOne({
       where: { email },
-      select: { email: true, password: true, id: true }
+      select: { email: true, password: true, id: true, isActive: true }
     });
-    console.log(user);
 
     if (!user) throw new UnauthorizedException('Credenciales incorrectas.')
     if (!bcrypt.compareSync(password, user.password))
       throw new UnauthorizedException('Credenciales incorrectas.')
+    if(!user.isActive) 
+      throw new UnauthorizedException('Cuenta inactiva! Debe realizar el proceso de activacion de su cuenta o comunicarse con un Administrador.')
 
     return { ok: true, msg: 'Logeado con exito!', ...user, token: this.getJwtToken({ id: user.id }) };
   }
