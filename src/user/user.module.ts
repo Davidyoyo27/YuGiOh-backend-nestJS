@@ -12,6 +12,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { IsEmailUniqueConstraint } from './decorators/validators/is-email-unique.validator';
 import { IsNickNameUniqueConstraint } from './decorators/validators/is-nickname-unique.validator';
+import { EmailModule } from '../email/email.module'
 
 @Module({
   controllers: [UserController],
@@ -47,7 +48,8 @@ import { IsNickNameUniqueConstraint } from './decorators/validators/is-nickname-
     //     expiresIn: '1h'
     //   }
     // })
+    EmailModule,
   ],
-  exports: [TypeOrmModule, JwtStrategy, PassportModule, JwtModule]
+  exports: [TypeOrmModule, JwtStrategy, PassportModule, JwtModule, UserService]
 })
 export class UserModule {}

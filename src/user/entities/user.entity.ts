@@ -13,7 +13,10 @@ export class User {
     })
     email: string;
 
-    @Column('text')
+    @Column({
+        type: 'text',
+        select: false,
+    })
     password: string;
 
     @Column('text')
@@ -31,6 +34,20 @@ export class User {
         nullable: true,
     })
     nickName: string | null;
+
+    @Column({
+        type: 'text',
+        nullable: true,
+        select: false,
+    })
+    activationCode?: string | null;
+
+    @Column({
+        type: 'timestamp',
+        nullable: true,
+        select: false,
+    })
+    activationCodeExpires?: Date | null;
 
     @Column({
         type: 'bool',

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException, Injectable,
   InternalServerErrorException, Logger, NotFoundException,
   UnauthorizedException
@@ -15,6 +16,8 @@ import bcrypt from 'bcrypt';
 import { LoginUserDto } from './dto/login-user.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { JwtService } from '@nestjs/jwt';
+import { EmailService } from '../email/email.service';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class UserService {
@@ -29,6 +32,8 @@ export class UserService {
     private readonly userTypeRepository: Repository<UserType>,
 
     private readonly jwtService: JwtService,
+
+    private readonly emailService: EmailService,
   ) { }
 
   async create(createUserDto: CreateUserDto) {
@@ -40,16 +45,33 @@ export class UserService {
 
       if (!userType) throw new Error('No se encontro el tipo de usuario por defecto.')
 
+      // generacion de codigo de activacion
+      const code = this.generateActivationCode();
+
+      // tiempo de expiracion del codigo    30 minutos
+      const expires = new Date(Date.now() + 30 * 60 * 1000);
+
       const user = this.userRepository.create({
         ...userData,
         password: bcrypt.hashSync(password, 10),
         nickName: createUserDto.nickName || null,
+        activationCode: code,
+        activationCodeExpires: expires,
         typeUser: userType,
       });
 
       await this.userRepository.save(user);
+      await this.emailService.sendMail(
+        user.email,
+        'Bienvenido Duelista - Confirma tu cuenta',
+        'welcome',
+        {
+          name: user.name,
+          code: user.activationCode,
+        },
+      );
 
-      return { ok: true, user };
+      return { ok: true, message: 'Usuario creado. Revisa tu correo para activar la cuenta', user };
     } catch (error) {
       this.handleDBException(error);
     }
@@ -128,6 +150,36 @@ export class UserService {
   private getJwtToken(payload: JwtPayload) {
     const token = this.jwtService.sign(payload);
     return token;
+  }
+
+  private generateActivationCode() {
+    const code = randomBytes(4).toString('hex'); // 8 caracteres
+    return code;
+  }
+
+  async verifyActivation(emailOrNick: string, code: string) {
+    const user = await this.userRepository.findOne({
+      // para realizar el filtro puede usar el email o el nickName
+      where: [{ email: emailOrNick }, { nickName: emailOrNick }],
+      select: ['id', 'email', 'activationCode', 'activationCodeExpires', 'isActive'],
+    });
+
+    if (!user) throw new NotFoundException('Usuario no encontrado.');
+    if (user.isActive) throw new BadRequestException('Cuenta ya activada.');
+
+    if (!user.activationCode || user.activationCode !== code)
+      throw new BadRequestException('Código de activación inválido.');
+
+    if (!user.activationCodeExpires || user.activationCodeExpires < new Date()) 
+      throw new BadRequestException('Código de activación expirado.');
+
+    user.isActive = true;
+    user.activationCode = null;
+    user.activationCodeExpires = null;
+
+    await this.userRepository.save(user);
+    
+    return { ok: true, message: 'Cuenta activada correctamente.' };
   }
 
   private handleDBException(error: any): never {
