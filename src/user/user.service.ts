@@ -2,8 +2,7 @@ import {
   BadRequestException,
   ConflictException, Injectable,
   InternalServerErrorException, Logger, NotFoundException,
-  UnauthorizedException
-} from '@nestjs/common';
+  } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ILike, Repository } from 'typeorm';
@@ -13,11 +12,8 @@ import { User } from './entities/user.entity';
 import { UserType } from './entities/user-type.entity';
 
 import bcrypt from 'bcrypt';
-import { LoginUserDto } from './dto/login-user.dto';
-import { JwtPayload } from './interfaces/jwt-payload.interface';
-import { JwtService } from '@nestjs/jwt';
 import { EmailService } from '../email/email.service';
-import { randomBytes } from 'crypto';
+import { generateActivationCode, generateTimeExpiration } from 'src/common/utils/functions';
 
 @Injectable()
 export class UserService {
@@ -30,8 +26,6 @@ export class UserService {
 
     @InjectRepository(UserType)
     private readonly userTypeRepository: Repository<UserType>,
-
-    private readonly jwtService: JwtService,
 
     private readonly emailService: EmailService,
   ) { }
@@ -46,10 +40,10 @@ export class UserService {
       if (!userType) throw new Error('No se encontro el tipo de usuario por defecto.')
 
       // generacion de codigo de activacion
-      const code = this.generateActivationCode();
+      const code = generateActivationCode();
 
-      // tiempo de expiracion del codigo    30 minutos
-      const expires = new Date(Date.now() + 30 * 60 * 1000);
+      // tiempo de expiracion del codigo          30 minutos
+      const expires = generateTimeExpiration(30);
 
       const user = this.userRepository.create({
         ...userData,
@@ -129,34 +123,6 @@ export class UserService {
     return this.userRepository.save(user);
   }
 
-  async login(loginUserDto: LoginUserDto) {
-
-    const { password, email } = loginUserDto;
-
-    const user = await this.userRepository.findOne({
-      where: { email },
-      select: { email: true, password: true, id: true, isActive: true }
-    });
-
-    if (!user) throw new UnauthorizedException('Credenciales incorrectas.')
-    if (!bcrypt.compareSync(password, user.password))
-      throw new UnauthorizedException('Credenciales incorrectas.')
-    if(!user.isActive) 
-      throw new UnauthorizedException('Cuenta inactiva! Debe realizar el proceso de activacion de su cuenta o comunicarse con un Administrador.')
-
-    return { ok: true, msg: 'Logeado con exito!', ...user, token: this.getJwtToken({ id: user.id }) };
-  }
-
-  private getJwtToken(payload: JwtPayload) {
-    const token = this.jwtService.sign(payload);
-    return token;
-  }
-
-  private generateActivationCode() {
-    const code = randomBytes(4).toString('hex'); // 8 caracteres
-    return code;
-  }
-
   async verifyActivation(emailOrNick: string, code: string) {
     const user = await this.userRepository.findOne({
       // para realizar el filtro puede usar el email o el nickName
@@ -170,15 +136,15 @@ export class UserService {
     if (!user.activationCode || user.activationCode !== code)
       throw new BadRequestException('Código de activación inválido.');
 
-    if (!user.activationCodeExpires || user.activationCodeExpires < new Date()) 
-      throw new BadRequestException('Código de activación expirado.');
+    if (!user.activationCodeExpires || user.activationCodeExpires < new Date())
+      throw new BadRequestException('Código de activación expirado. Comuniquese con un Administrador para obtener un nuevo código de activación.');
 
     user.isActive = true;
     user.activationCode = null;
     user.activationCodeExpires = null;
 
     await this.userRepository.save(user);
-    
+
     return { ok: true, message: 'Cuenta activada correctamente.' };
   }
 
