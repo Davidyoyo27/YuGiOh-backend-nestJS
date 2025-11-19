@@ -1,12 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, 
-  ParseUUIDPipe, UseInterceptors, ClassSerializerInterceptor, 
-  UseGuards,
-  Req} from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, 
+  ParseUUIDPipe, UseInterceptors, ClassSerializerInterceptor } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { LoginUserDto } from './dto/login-user.dto';
-import { AuthGuard } from '@nestjs/passport';
+import { VerifyActivationDto } from './dto/verify-activation.dto';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('user')
@@ -37,9 +34,9 @@ export class UserController {
     return this.userService.update(id, updateUserDto);
   }
 
-  @Post('login')
-  loginUser(@Body() loginUserDto: LoginUserDto) {
-    return this.userService.login(loginUserDto);
+  @Post('account-activation')
+  verify(@Body() body: VerifyActivationDto) {
+    return this.userService.verifyActivation(body.emailOrNick, body.codeActivation);
   }
 
 }
