@@ -1,9 +1,11 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { UserType } from "./user-type.entity";
+import { Exclude } from "class-transformer";
 
 @Entity()
 export class User {
 
+    @Exclude()
     @PrimaryGeneratedColumn('uuid')
     id: string;
 

@@ -7,6 +7,9 @@ import { User } from 'src/user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { generateActivationCode, generateTimeExpiration } from 'src/common/utils/functions';
 import { EmailService } from '../email/email.service';
+import { UpdateUserByAdminDto } from './dto/update-user-by-admin.dto';
+import { UserResponseDto } from 'src/user/dto/user-response.dto';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class AdminService {
@@ -32,7 +35,9 @@ export class AdminService {
           'user.nickName',
           'user.isActive',
           'typeUser.type_name'
-        ]).getMany();
+        ])
+        .where('user.typeUserId = :id', { id: 2 })
+        .getMany();
 
       return users;
     } catch (error) {
@@ -68,11 +73,32 @@ export class AdminService {
     return { ok: true, message: 'Correo de activación reenviado.' }
   }
 
+  async blockUserAdmin(id: string, updateUserByAdminDto: UpdateUserByAdminDto): Promise<UserResponseDto> {
+
+    const user = await this.userRepository.findOne({
+      where: { id },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`El usuario con id ${id} no existe.`);
+    }
+
+    // modificamos solo el campo recibido
+    user.isActive = updateUserByAdminDto.isActive;
+    // guardamos los cambios
+    await this.userRepository.save(user);
+
+    // devolvemos solo los campos que se desean visualizar
+    return plainToInstance(UserResponseDto, user, {
+      // habilita el @Expose() en el responseDTO
+      excludeExtraneousValues: true,
+    });
+  }
+
   private handleDBException(error: any): never {
     // 💬 Si el error viene de un constraint UNIQUE
     if (error.code === '23505') {
       throw new ConflictException('El campo ingresado ya existe, verificar.');
-      // throw new ConflictException('El correo ingresado ya existe.');
     }
 
     // 🪵 Registrar en consola o logs para depuración
