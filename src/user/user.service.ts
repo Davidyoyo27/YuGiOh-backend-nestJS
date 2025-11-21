@@ -34,7 +34,7 @@ export class UserService {
     try {
 
       const { password, passwordConfirm, ...userData } = createUserDto;
-      //                                                            2: duelista
+      //                                                              2: duelista
       const userType = await this.userTypeRepository.findOne({ where: { id: 2 } });
 
       if (!userType) throw new Error('No se encontro el tipo de usuario por defecto.')
@@ -42,7 +42,7 @@ export class UserService {
       // generacion de codigo de activacion
       const code = generateActivationCode();
 
-      // tiempo de expiracion del codigo          30 minutos
+      // tiempo de expiracion del codigo     30 minutos
       const expires = generateTimeExpiration(30);
 
       const user = this.userRepository.create({
@@ -152,7 +152,6 @@ export class UserService {
     // 💬 Si el error viene de un constraint UNIQUE
     if (error.code === '23505') {
       throw new ConflictException('El campo ingresado ya existe, verificar.');
-      // throw new ConflictException('El correo ingresado ya existe.');
     }
 
     // 🪵 Registrar en consola o logs para depuración
