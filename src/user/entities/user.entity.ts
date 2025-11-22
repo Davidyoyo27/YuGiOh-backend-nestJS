@@ -1,11 +1,10 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { UserType } from "./user-type.entity";
-import { Exclude } from "class-transformer";
+import { TokenReset } from "./token-reset.entity";
 
 @Entity()
 export class User {
 
-    @Exclude()
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
@@ -71,4 +70,10 @@ export class User {
     )
     typeUser: UserType;
 
+    @OneToMany(
+        () => TokenReset,
+        (resetToken) => resetToken.user,
+        { cascade: true, eager: true }
+    )
+    tokenReset: TokenReset;
 }

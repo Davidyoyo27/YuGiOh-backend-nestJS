@@ -9,6 +9,8 @@ import { User } from 'src/user/entities/user.entity';
 import { UserType } from 'src/user/entities/user-type.entity';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
+import { TokenReset } from 'src/user/entities/token-reset.entity';
+import { EmailModule } from 'src/email/email.module';
 
 @Module({
   controllers: [AuthController],
@@ -18,10 +20,11 @@ import { JwtModule } from '@nestjs/jwt';
   ],
   imports: [
     UserModule, // si AuthService usa UserService
+    EmailModule,
 
     ConfigModule,
 
-    TypeOrmModule.forFeature([ User, UserType ]),
+    TypeOrmModule.forFeature([ User, UserType, TokenReset ]),
 
     // PassportModule para que AuthGuard() funcione donde lo deseas ocupar
     PassportModule.register({ defaultStrategy: 'jwt' }),
