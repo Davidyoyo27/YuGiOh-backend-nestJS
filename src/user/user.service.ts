@@ -14,6 +14,7 @@ import { UserType } from './entities/user-type.entity';
 import bcrypt from 'bcrypt';
 import { EmailService } from '../email/email.service';
 import { generateActivationCode, generateTimeExpiration } from 'src/common/utils/functions';
+import { ChangeUserPasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class UserService {
@@ -146,6 +147,23 @@ export class UserService {
     await this.userRepository.save(user);
 
     return { ok: true, message: 'Cuenta activada correctamente.' };
+  }
+
+  async changePassword(id: string, changeUserPasswordDto: ChangeUserPasswordDto){
+    const user = await this.userRepository.findOne({
+      where: { id },
+    });
+
+    if(!user) throw new NotFoundException('Usuario no encontrado.');
+
+    const newPassword = changeUserPasswordDto.password;
+    const passwordHashed = bcrypt.hashSync(newPassword, 10);
+
+    user.password = passwordHashed;
+
+    await this.userRepository.save(user);
+
+    return { ok: true, message: 'Contraseña cambiada correctamente.' };
   }
 
   private handleDBException(error: any): never {
