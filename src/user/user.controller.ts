@@ -8,6 +8,8 @@ import { VerifyActivationDto } from './dto/verify-activation.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
+import { ChangeUserPasswordDto } from './dto/change-password.dto';
+import { UuidValidationPipe } from 'src/common/pipes/uuid-validation/uuid-validation.pipe';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('user')
@@ -43,10 +45,20 @@ export class UserController {
   @Roles(2)
   @Patch(':id')
   update(
-    @Param('id', ParseUUIDPipe) id: string, 
+    @Param('id', new UuidValidationPipe()) id: string, 
     @Body() updateUserDto: UpdateUserDto
   ) {
     return this.userService.update(id, updateUserDto);
   }
 
+  @UseGuards( AuthGuard(), RolesGuard )
+  @Roles(2)
+  @Patch('change-password/:id')
+  changeUserPassword(
+    @Param('id', new UuidValidationPipe()) id: string,
+    @Body() changeUserPasswordDto: ChangeUserPasswordDto
+  ){
+    return this.userService.changePassword(id, changeUserPasswordDto);
+  }
+  
 }
