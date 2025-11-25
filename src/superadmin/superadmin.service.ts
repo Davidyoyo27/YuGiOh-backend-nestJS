@@ -1,0 +1,183 @@
+import { ConflictException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+
+import { User } from 'src/user/entities/user.entity';
+import { UserType } from 'src/user/entities/user-type.entity';
+
+import { CreateUserDto } from 'src/user/dto/create-user.dto';
+import { UpdateUserDto } from 'src/user/dto/update-user.dto';
+import { SuperAdminResponseDto } from './dto/superadmin-response.dto';
+
+import { plainToInstance } from 'class-transformer';
+import { EmailService } from 'src/email/email.service';
+import { generateActivationCode, generateTimeExpiration } from 'src/common/utils/functions';
+import bcrypt from 'bcrypt';
+
+@Injectable()
+export class SuperadminService {
+
+  private readonly logger = new Logger('UserService');
+
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+
+    @InjectRepository(UserType)
+    private readonly userTypeRepository: Repository<UserType>,
+
+    private readonly emailService: EmailService,
+  ) { }
+
+  async createSuperAdmin(createUserDto: CreateUserDto) {
+    try {
+
+      const { password, passwordConfirm, ...userData } = createUserDto;
+
+      const userType = await this.userTypeRepository.findOne({ where: { id: 4 } });
+
+      if (!userType) throw new Error('No se encontro el tipo de usuario por defecto.');
+
+      const code = generateActivationCode();
+      const expires = generateTimeExpiration(15);
+
+      const user = this.userRepository.create({
+        ...userData,
+        password: bcrypt.hashSync(password, 10),
+        nickName: createUserDto.nickName || null,
+        activationCode: code,
+        activationCodeExpires: expires,
+        typeUser: userType,
+      });
+
+      await this.userRepository.save(user);
+      await this.emailService.sendMail(
+        user.email,
+        'Bienvenido SuperAdministrador - ACCESO DE NIVEL Ω CONCEDIDO - Confirma tu cuenta',
+        'account-superadmin',
+        {
+          name: user.name,
+          code: user.activationCode,
+        }
+      );
+
+      return { ok: true, message: 'SuperAdmin creado correctamente.' };
+    } catch (error) {
+      this.handleDBException(error);
+    }
+  }
+
+  async createAdmin(createUserDto: CreateUserDto) {
+    try {
+
+      const { password, passwordConfirm, ...userData } = createUserDto;
+
+      const userType = await this.userTypeRepository.findOne({ where: { id: 3 } });
+
+      if (!userType) throw new Error('No se encontro el tipo de usuario por defecto.');
+
+      const code = generateActivationCode();
+      const expires = generateTimeExpiration(15);
+
+      const user = this.userRepository.create({
+        ...userData,
+        password: bcrypt.hashSync(password, 10),
+        nickName: createUserDto.nickName || null,
+        activationCode: code,
+        activationCodeExpires: expires,
+        typeUser: userType,
+      });
+
+      await this.userRepository.save(user);
+      await this.emailService.sendMail(
+        user.email,
+        'Bienvenido Administrador - Control Concedido sobre Insectos - Confirma tu cuenta',
+        'account-admin',
+        {
+          name: user.name,
+          code: user.activationCode,
+        }
+      );
+
+      return { ok: true, message: 'Administrador creado correctamente.' };
+    } catch (error) {
+      this.handleDBException(error);
+    }
+  }
+
+  // findAll() con filtros por tipo de usuario, 
+  // trae todos los usuarios con o sin filtro de "tipo de usuario"
+  async findAll(typeUserIds?: number[]) {
+    try {
+      // SOLO estos ids del typeUser son posibles consultarlos
+      const allowed = [2, 3];
+
+      let finalIds: number[];
+
+      // si el usuario PASA FILTROS, usarlos
+      if (typeUserIds && typeUserIds.length > 0) {
+        // filtrar solo roles permitidos
+        finalIds = typeUserIds.filter(id => allowed.includes(id));
+
+        // si despues del filtro no queda ninguno forzar [2, 3] por seguridad
+        if (finalIds.length === 0) finalIds = allowed;
+
+      } else {
+        // Si el usuario no mando filtros, solo 2 y 3 se ocuparan por defecto
+        finalIds = allowed;
+      }
+
+      const users = await this.userRepository.createQueryBuilder('user')
+        .leftJoin('user.typeUser', 'typeUser')
+        .select([
+          'user.email',
+          'user.name',
+          'user.lastName',
+          'user.nickName',
+          'user.isActive',
+          'typeUser.type_name',
+        ])
+        .where('user.typeUserId IN (:...id)', { id: finalIds })
+        .getMany();
+
+      return users;
+    } catch (error) {
+      this.handleDBException(error);
+    }
+  }
+
+  async update(id: string, updateUserDto: UpdateUserDto){
+ 
+    const { nickName, lastName, passwordConfirm, ...restData } = updateUserDto;
+
+    const user = await this.userRepository.preload({
+      id,
+      ...restData,
+      lastName: lastName === '' ? null : lastName,
+      nickName: nickName === '' ? null : nickName,
+    });
+    
+    if(!user) throw new NotFoundException('Usuario no encontrado.');
+
+    const userModified = this.userRepository.save(user);
+
+    // devolvemos solo los campos que se desean visualizar
+    return plainToInstance(SuperAdminResponseDto, userModified, {
+      // habilita el @Expose() en el responseDTO
+      excludeExtraneousValues: true,
+    });
+  }
+
+  private handleDBException(error: any): never {
+    // 💬 Si el error viene de un constraint UNIQUE
+    if (error.code === '23505') {
+      throw new ConflictException('El campo ingresado ya existe, verificar.');
+    }
+
+    // 🪵 Registrar en consola o logs para depuración
+    this.logger.error(error);
+
+    // ⚠️ Si no coincide con ninguno de los anteriores
+    throw new InternalServerErrorException('Error, revisar los logs del servidor');
+  }
+}
