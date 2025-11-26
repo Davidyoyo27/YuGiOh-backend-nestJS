@@ -6,6 +6,7 @@ import { UpdateUserDto } from 'src/user/dto/update-user.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
+import { UpdateUserByAdminDto } from 'src/admin/dto/update-user-by-admin.dto';
 
 @Controller('superadmin')
 export class SuperadminController {
@@ -43,6 +44,15 @@ export class SuperadminController {
     @Body() updateUserDto: UpdateUserDto
   ){
     return this.superadminService.update(id, updateUserDto);
+  }
+
+  // bloquear usuarios de tipo Administrador y/o Duelista
+  @Patch('superadministrator/block-user-account/:id')
+  blockUserAccount(
+    @Param('id', new UuidValidationPipe()) id: string,
+    @Body() updateUserByAdminDto: UpdateUserByAdminDto
+  ){
+    return this.superadminService.blockUserAccount(id, updateUserByAdminDto);
   }
 
 }

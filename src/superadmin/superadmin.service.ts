@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -13,6 +13,8 @@ import { plainToInstance } from 'class-transformer';
 import { EmailService } from 'src/email/email.service';
 import { generateActivationCode, generateTimeExpiration } from 'src/common/utils/functions';
 import bcrypt from 'bcrypt';
+import { UpdateUserByAdminDto } from 'src/admin/dto/update-user-by-admin.dto';
+import { UserResponseDto } from 'src/user/dto/user-response.dto';
 
 @Injectable()
 export class SuperadminService {
@@ -146,8 +148,8 @@ export class SuperadminService {
     }
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto){
- 
+  async update(id: string, updateUserDto: UpdateUserDto) {
+
     const { nickName, lastName, passwordConfirm, ...restData } = updateUserDto;
 
     const user = await this.userRepository.preload({
@@ -156,13 +158,29 @@ export class SuperadminService {
       lastName: lastName === '' ? null : lastName,
       nickName: nickName === '' ? null : nickName,
     });
-    
-    if(!user) throw new NotFoundException('Usuario no encontrado.');
+
+    if (!user) throw new NotFoundException('Usuario no encontrado.');
 
     const userModified = this.userRepository.save(user);
 
     // devolvemos solo los campos que se desean visualizar
     return plainToInstance(SuperAdminResponseDto, userModified, {
+      // habilita el @Expose() en el responseDTO
+      excludeExtraneousValues: true,
+    });
+  }
+
+  async blockUserAccount(id: string, updateUserByAdminDto: UpdateUserByAdminDto) {
+    const user = await this.userRepository.findOne({ where: { id } });
+
+    if (!user) throw new NotFoundException(`El usuario con el id ${id} no existe.`);
+    if (user?.typeUser.id === 4) throw new BadRequestException('No es posible modificar este usuario');
+
+    user.isActive = updateUserByAdminDto.isActive;
+    await this.userRepository.save(user);
+
+    // devolvemos solo los campos que se desean visualizar
+    return plainToInstance(UserResponseDto, user, {
       // habilita el @Expose() en el responseDTO
       excludeExtraneousValues: true,
     });

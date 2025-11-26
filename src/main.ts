@@ -20,6 +20,6 @@ async function bootstrap() {
   // agregados no arroje error al momento de usarlos
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 4000);
 }
 bootstrap();
