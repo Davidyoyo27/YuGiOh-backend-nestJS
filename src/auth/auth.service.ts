@@ -1,4 +1,4 @@
-import { BadRequestException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -10,7 +10,6 @@ import { LoginUserDto } from './dto/login-user.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 
 import bcrypt from 'bcrypt';
-import { JwtPayload } from './interfaces/jwt-payload.interfaces';
 import { JwtService } from '@nestjs/jwt';
 import { generateAleatoryToken, generateTimeExpiration } from 'src/common/utils/functions';
 import { EmailService } from 'src/email/email.service';
@@ -45,12 +44,19 @@ export class AuthService {
         if (!user.isActive)
             throw new UnauthorizedException('Cuenta inactiva! Debe realizar el proceso de activación de su cuenta o comunicarse con un Administrador.')
 
-        return { ok: true, msg: 'Logeado con exito!', ...user, token: this.getJwtToken({ id: user.id }) };
-    }
+        // generamos accessToken y refreshToken
+        const tokens = await this.getTokens(user.id, user.email);
+        // guardamos el refreshToken en la BD
+        await this.updateRefreshToken(user.id, tokens.refreshToken);
 
-    private getJwtToken(payload: JwtPayload) {
-        const token = this.jwtService.sign(payload);
-        return token;
+        return {
+            ok: true, 
+            msg: 'Logeado con exito!', 
+            tokens: { 
+                accessToken: tokens.accessToken, 
+                refreshToken: tokens.refreshToken 
+            }
+        }
     }
 
     async sendEmailForgotPassword(email: string) {
@@ -120,6 +126,81 @@ export class AuthService {
         await this.tokenResetRepository.remove(tokenRecord);
 
         return { message: 'Contraseña actualizada correctamente.' };
+    }
+
+    // genera los tokens para accessToken y refreshToken
+    async getTokens(userId: string, email: string) {
+        // identifier: es el que se pasara en el validate del jwtstrategy
+        const payload = { identifier: userId, email };
+
+        const [accessToken, refreshToken] = await Promise.all([
+            this.jwtService.signAsync(payload, {
+                secret: process.env.JWT_ACCESS_SECRET,
+                expiresIn: '1m',
+            }),
+            this.jwtService.signAsync(payload, {
+                secret: process.env.JWT_REFRESH_SECRET,
+                expiresIn: '1d',
+            }),
+        ]);
+
+        return { accessToken, refreshToken };
+    }
+
+    async updateRefreshToken(userId: string, refreshToken: string) {
+        const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+
+        await this.userRepository.update(
+            { id: userId },
+            { hashedRefreshToken },
+        );
+    }
+
+    async refreshTokens(userId: string, refreshToken: string){
+
+        // 1. verificar criptográficamente que este token fue firmado con JWT_REFRESH_SECRET
+        let payload;
+
+        try {
+            payload = await this.jwtService.verifyAsync(refreshToken, {
+                secret: process.env.JWT_REFRESH_SECRET,
+            });
+        } catch (error) {
+            throw new UnauthorizedException('Refresh Token inválido o expirado.');
+        }
+
+        // 2. el token debe pertenecer al mismo usuario
+        if(payload.identifier !== userId) throw new UnauthorizedException('Refresh Token no corresponde al usuario.');
+
+        // 3. buscar el usuario con el refreshToken guardado
+        const user = await this.userRepository.findOne({
+            where: { id: userId },
+            select: ['id', 'email', 'hashedRefreshToken'],
+        });
+
+        if(!user || !user.hashedRefreshToken) throw new ForbiddenException('Acceso Denegado.');
+
+        // 4. comparar el refresh token enviado con el almacenado (hash)
+        const rtMatches = await bcrypt.compare(
+            refreshToken,
+            user.hashedRefreshToken
+        );
+
+        if(!rtMatches) throw new ForbiddenException('RefreshToken invalido.');
+
+        // 5. generar nuevos tokens
+        const tokens = await this.getTokens(user.id, user.email);
+        // 6. guardar el nuevo refresh token con hash
+        await this.updateRefreshToken(user.id, tokens.refreshToken);
+
+        return tokens;
+    }
+
+    async logout(userId: string){
+        await this.userRepository.update(
+            { id: userId },
+            { hashedRefreshToken: null }
+        );
     }
 
 }
