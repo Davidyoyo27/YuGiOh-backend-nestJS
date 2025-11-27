@@ -17,18 +17,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         configService: ConfigService,
     ) {
         super({
-            secretOrKey: configService.get('JWT_SECRET') as string,
+            secretOrKey: configService.get('JWT_ACCESS_SECRET') as string,
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
         });
     }
     
     async validate(payload: JwtPayload): Promise<User> {
 
-        const { id } = payload;
+        const { identifier } = payload;
 
-        // const user = await this.userRepository.findOneBy({ id });
         const user = await this.userRepository.findOne({
-            where: { id: id },
+            where: { id: identifier },
             relations: ['typeUser'],
         });
 

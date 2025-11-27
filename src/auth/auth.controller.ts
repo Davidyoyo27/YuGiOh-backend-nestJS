@@ -3,6 +3,7 @@ import { LoginUserDto } from './dto/login-user.dto';
 import { AuthService } from './auth.service';
 import { EmailResetPasswordDto } from './dto/email-reset-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UuidValidationPipe } from 'src/common/pipes/uuid-validation/uuid-validation.pipe';
 
 @Controller('auth')
 export class AuthController {
@@ -31,6 +32,14 @@ export class AuthController {
   @Patch('reset-password')
   resetPassword(@Body() resetPasswordDto: ResetPasswordDto){
     return this.authService.resetPassword(resetPasswordDto);
+  }
+
+  @Post('refresh')
+  async refreshToken(
+    @Body('refreshToken') refreshToken: string,
+    @Body('userId', new UuidValidationPipe()) userId: string,
+  ){
+    return this.authService.refreshTokens(userId, refreshToken);
   }
 
 }
