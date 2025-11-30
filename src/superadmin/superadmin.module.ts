@@ -6,6 +6,7 @@ import { UserType } from 'src/user/entities/user-type.entity';
 import { User } from 'src/user/entities/user.entity';
 import { EmailModule } from 'src/email/email.module';
 import { PassportModule } from '@nestjs/passport';
+import { UserSessions } from 'src/auth/entities/user-sessions.entity';
 
 @Module({
   controllers: [SuperadminController],
@@ -13,7 +14,7 @@ import { PassportModule } from '@nestjs/passport';
   imports:[
     EmailModule,
     
-    TypeOrmModule.forFeature([User, UserType]),
+    TypeOrmModule.forFeature([User, UserType, UserSessions]),
 
     PassportModule.register({ defaultStrategy: 'jwt' }),
   ]

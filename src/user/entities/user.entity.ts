@@ -1,6 +1,7 @@
 import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { UserType } from "./user-type.entity";
 import { TokenReset } from "./token-reset.entity";
+import { UserSessions } from "src/auth/entities/user-sessions.entity";
 
 @Entity()
 export class User {
@@ -83,4 +84,10 @@ export class User {
         { cascade: true, eager: true }
     )
     tokenReset: TokenReset;
+
+    @OneToMany(
+        () => UserSessions,
+        (session) => session.user 
+    )
+    user_session: UserSessions;
 }

@@ -5,14 +5,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { User } from 'src/user/entities/user.entity';
 import { TokenReset } from 'src/user/entities/token-reset.entity';
+import { UserSessions } from './entities/user-sessions.entity';
 
 import { LoginUserDto } from './dto/login-user.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 
 import bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { generateAleatoryToken, generateTimeExpiration } from 'src/common/utils/functions';
+import { generateAleatoryToken, generateTimeExpirationInMinutes, generateTimeExpirationInDays } from 'src/common/utils/functions';
 import { EmailService } from 'src/email/email.service';
+import { RequestMetaData } from './interfaces/request-meta-data.interfaces';
 
 @Injectable()
 export class AuthService {
@@ -24,12 +26,15 @@ export class AuthService {
         @InjectRepository(TokenReset)
         private readonly tokenResetRepository: Repository<TokenReset>,
 
+        @InjectRepository(UserSessions)
+        private readonly userSessionRepository: Repository<UserSessions>,
+
         private readonly jwtService: JwtService,
 
         private readonly emailService: EmailService,
     ) { }
 
-    async login(loginUserDto: LoginUserDto) {
+    async login(loginUserDto: LoginUserDto, reqData: RequestMetaData) {
 
         const { password, email } = loginUserDto;
 
@@ -48,6 +53,11 @@ export class AuthService {
         const tokens = await this.getTokens(user.id, user.email);
         // guardamos el refreshToken en la BD
         await this.updateRefreshToken(user.id, tokens.refreshToken);
+
+        const timeExpirationToken = generateTimeExpirationInDays(1);
+
+        // creamos el registro de la session del usuario
+        await this.createUserSession(user.id, tokens.refreshToken, reqData.ip, reqData.userAgent, timeExpirationToken);
 
         return {
             ok: true, 
@@ -69,7 +79,7 @@ export class AuthService {
         if (!user) return null;
 
         const token = generateAleatoryToken();
-        const expiration = generateTimeExpiration(15);
+        const expiration = generateTimeExpirationInMinutes(15);
 
         const tokenRegister = this.tokenResetRepository.create({
             token,
@@ -201,6 +211,22 @@ export class AuthService {
             { id: userId },
             { hashedRefreshToken: null }
         );
+    }
+
+    async createUserSession(userId: string, refreshToken: string, ip: string, userAgent: string, expiresAt: Date){
+        const refreshTokenHashed = bcrypt.hashSync(refreshToken, 10);
+
+        const userSession = this.userSessionRepository.create({
+            hashedRT: refreshTokenHashed,
+            ipAddress: ip,
+            userAgent,
+            expiresAt,
+            user: { id: userId }
+        });
+
+        await this.userSessionRepository.save(userSession);
+
+        return userSession;
     }
 
 }

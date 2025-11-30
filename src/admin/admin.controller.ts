@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { AuthGuard } from '@nestjs/passport';
-import { UuidValidationPipe } from 'src/common/pipes/uuid-validation/uuid-validation.pipe';
+import { UuidValidationPipe } from 'src/common/pipes/uuid-validation.pipe';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { UpdateUserByAdminDto } from './dto/update-user-by-admin.dto';
