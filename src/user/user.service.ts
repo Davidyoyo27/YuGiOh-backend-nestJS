@@ -13,7 +13,7 @@ import { UserType } from './entities/user-type.entity';
 
 import bcrypt from 'bcrypt';
 import { EmailService } from '../email/email.service';
-import { generateActivationCode, generateTimeExpiration } from 'src/common/utils/functions';
+import { generateActivationCode, generateTimeExpirationInMinutes } from 'src/common/utils/functions';
 import { ChangeUserPasswordDto } from './dto/change-password.dto';
 
 @Injectable()
@@ -44,7 +44,7 @@ export class UserService {
       const code = generateActivationCode();
 
       // tiempo de expiracion del codigo     30 minutos
-      const expires = generateTimeExpiration(30);
+      const expires = generateTimeExpirationInMinutes(30);
 
       const user = this.userRepository.create({
         ...userData,

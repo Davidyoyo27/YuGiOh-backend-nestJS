@@ -5,7 +5,7 @@ import {
 import { Repository } from 'typeorm';
 import { User } from 'src/user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { generateActivationCode, generateTimeExpiration } from 'src/common/utils/functions';
+import { generateActivationCode, generateTimeExpirationInMinutes } from 'src/common/utils/functions';
 import { EmailService } from '../email/email.service';
 import { UpdateUserByAdminDto } from './dto/update-user-by-admin.dto';
 import { UserResponseDto } from 'src/user/dto/user-response.dto';
@@ -54,7 +54,7 @@ export class AdminService {
     // generar el codigo
     const newCode = generateActivationCode();
     // asignar tiempo de expiracion
-    const newTimeExpiration = generateTimeExpiration(30);
+    const newTimeExpiration = generateTimeExpirationInMinutes(30);
 
     user.activationCode = newCode;
     user.activationCodeExpires = newTimeExpiration;

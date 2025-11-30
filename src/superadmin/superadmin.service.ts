@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { User } from 'src/user/entities/user.entity';
 import { UserType } from 'src/user/entities/user-type.entity';
+import { UserSessions } from 'src/auth/entities/user-sessions.entity';
 
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { UpdateUserDto } from 'src/user/dto/update-user.dto';
@@ -11,7 +12,7 @@ import { SuperAdminResponseDto } from './dto/superadmin-response.dto';
 
 import { plainToInstance } from 'class-transformer';
 import { EmailService } from 'src/email/email.service';
-import { generateActivationCode, generateTimeExpiration } from 'src/common/utils/functions';
+import { generateActivationCode, generateTimeExpirationInMinutes } from 'src/common/utils/functions';
 import bcrypt from 'bcrypt';
 import { UpdateUserByAdminDto } from 'src/admin/dto/update-user-by-admin.dto';
 import { UserResponseDto } from 'src/user/dto/user-response.dto';
@@ -28,6 +29,9 @@ export class SuperadminService {
     @InjectRepository(UserType)
     private readonly userTypeRepository: Repository<UserType>,
 
+    @InjectRepository(UserSessions)
+    private readonly userSessionRepository: Repository<UserSessions>,
+
     private readonly emailService: EmailService,
   ) { }
 
@@ -41,7 +45,7 @@ export class SuperadminService {
       if (!userType) throw new Error('No se encontro el tipo de usuario por defecto.');
 
       const code = generateActivationCode();
-      const expires = generateTimeExpiration(15);
+      const expires = generateTimeExpirationInMinutes(15);
 
       const user = this.userRepository.create({
         ...userData,
@@ -79,7 +83,7 @@ export class SuperadminService {
       if (!userType) throw new Error('No se encontro el tipo de usuario por defecto.');
 
       const code = generateActivationCode();
-      const expires = generateTimeExpiration(15);
+      const expires = generateTimeExpirationInMinutes(15);
 
       const user = this.userRepository.create({
         ...userData,
@@ -184,6 +188,33 @@ export class SuperadminService {
       // habilita el @Expose() en el responseDTO
       excludeExtraneousValues: true,
     });
+  }
+
+  async userFinishAllActiveSession(idUser: string){
+
+    await this.userSessionRepository.update(
+      { user: { id: idUser }, status: true }, // condicion
+      { status: false }                       // actualizacion
+    )
+    
+    return { message: 'Todas las sesiones del usuario han sido cerradas.' };
+  }
+
+  async userFinishActiveSession(idSession: number){
+
+    const session = await this.userSessionRepository.findOne({ where: { id: idSession } });
+
+    if(!session) throw new NotFoundException('La sesion no existe.');
+    if(session.status === false) throw new NotFoundException('La sesion ingresada ya se encuentra cerrada.');
+
+    session.status = false;
+    await this.userSessionRepository.save(session);
+    
+    return {
+      ok: true,
+      message: 'Sesion finalizada correctamente.',
+      sessionId: idSession,
+    }
   }
 
   private handleDBException(error: any): never {
