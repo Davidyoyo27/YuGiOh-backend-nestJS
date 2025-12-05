@@ -8,9 +8,16 @@ export class UserSessions {
     id: number;
 
     @Column({
-        type: 'text'
+        type: 'text', 
+        nullable: true,
     })
-    hashedRT: string;
+    hashedRT: string | null;
+
+    @Column({
+        type: 'int',
+        default: 0
+    })
+    tokenVersion: number;
 
     @Column({
         type: 'text',
@@ -45,7 +52,7 @@ export class UserSessions {
     // relacion
     @ManyToOne(
         () => User,
-        (user) => user.user_session,
+        (user) => user.userSession,
         { onDelete: 'CASCADE' },
     )
     user: User;

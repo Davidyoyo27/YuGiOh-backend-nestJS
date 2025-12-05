@@ -1,10 +1,12 @@
-import { Controller, Post, Body, Get, Param, Patch, Req } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Patch, Req, UseGuards } from '@nestjs/common';
 import { LoginUserDto } from './dto/login-user.dto';
 import { AuthService } from './auth.service';
 import { EmailResetPasswordDto } from './dto/email-reset-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UuidValidationPipe } from 'src/common/pipes/uuid-validation.pipe';
 import { getClientData } from 'src/common/utils/functions';
+import { AuthGuard } from '@nestjs/passport';
+import { CurrentSessionId } from './decorators/current-session-id.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -18,9 +20,14 @@ export class AuthController {
     @Req() req: any
   ) {
     const reqData = getClientData(req);
-    console.log(reqData);
 
     return this.authService.login(loginUserDto, reqData);
+  }
+
+  @UseGuards( AuthGuard() )
+  @Post('logout')
+  logoutUser(@CurrentSessionId() sessionId: number){
+    return this.authService.logout(sessionId);
   }
 
   // ingresas tu correo para solicitar el cambio de contraseña
@@ -44,9 +51,8 @@ export class AuthController {
   @Post('refresh')
   async refreshToken(
     @Body('refreshToken') refreshToken: string,
-    @Body('userId', new UuidValidationPipe()) userId: string,
   ) {
-    return this.authService.refreshTokens(userId, refreshToken);
+    return this.authService.refreshTokens(refreshToken);
   }
 
 }
