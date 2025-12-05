@@ -2,7 +2,7 @@ import {
   BadRequestException,
   ConflictException, Injectable,
   InternalServerErrorException, Logger, NotFoundException,
-  } from '@nestjs/common';
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ILike, Repository } from 'typeorm';
@@ -75,7 +75,15 @@ export class UserService {
   async findAll() {
     try {
 
-      const users = await this.userRepository.find();
+      const users = await this.userRepository.createQueryBuilder('user')
+        .leftJoin('user.typeUser', 'typeUser')
+        .select([
+          'user.name',
+          'user.lastName',
+          'user.nickName',
+        ])
+        .where('user.typeUserId = :id', { id: 2 })
+        .getMany();
 
       return users;
     } catch (error) {
@@ -149,12 +157,12 @@ export class UserService {
     return { ok: true, message: 'Cuenta activada correctamente.' };
   }
 
-  async changePassword(id: string, changeUserPasswordDto: ChangeUserPasswordDto){
+  async changePassword(id: string, changeUserPasswordDto: ChangeUserPasswordDto) {
     const user = await this.userRepository.findOne({
       where: { id },
     });
 
-    if(!user) throw new NotFoundException('Usuario no encontrado.');
+    if (!user) throw new NotFoundException('Usuario no encontrado.');
 
     const newPassword = changeUserPasswordDto.password;
     const passwordHashed = bcrypt.hashSync(newPassword, 10);
