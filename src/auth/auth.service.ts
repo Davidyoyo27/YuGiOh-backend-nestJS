@@ -49,15 +49,16 @@ export class AuthService {
         if (!user.isActive)
             throw new UnauthorizedException('Cuenta inactiva! Debe realizar el proceso de activación de su cuenta o comunicarse con un Administrador.')
 
-        // generamos accessToken y refreshToken
-        const tokens = await this.getTokens(user.id, user.email);
-        // guardamos el refreshToken en la BD
-        await this.updateRefreshToken(user.id, tokens.refreshToken);
-
         const timeExpirationToken = generateTimeExpirationInDays(1);
 
         // creamos el registro de la session del usuario
-        await this.createUserSession(user.id, tokens.refreshToken, reqData.ip, reqData.userAgent, timeExpirationToken);
+        //                                                       refreshToken null inicialmente
+        const userSession = await this.createUserSession(user.id, null, reqData.ip, reqData.userAgent, timeExpirationToken);
+
+        // generamos accessToken y refreshToken
+        const tokens = await this.getTokens(user.id, user.email, userSession.id, userSession.tokenVersion);
+        // guardamos el refreshToken en la BD
+        await this.updateRefreshToken(userSession.id, tokens.refreshToken);
 
         return {
             ok: true, 
@@ -139,38 +140,40 @@ export class AuthService {
     }
 
     // genera los tokens para accessToken y refreshToken
-    async getTokens(userId: string, email: string) {
+    async getTokens(userId: string, email: string, sessionId: number, tokenVersion: number) {
         // identifier: es el que se pasara en el validate del jwtstrategy
-        const payload = { identifier: userId, email };
+        const payload = { identifier: userId, email, sessionId, tokenVersion };
 
         const [accessToken, refreshToken] = await Promise.all([
             this.jwtService.signAsync(payload, {
                 secret: process.env.JWT_ACCESS_SECRET,
-                expiresIn: '1m',
+                expiresIn: '15m', // 15 minutos
             }),
             this.jwtService.signAsync(payload, {
                 secret: process.env.JWT_REFRESH_SECRET,
-                expiresIn: '1d',
+                expiresIn: '1d', // un dia
             }),
         ]);
 
         return { accessToken, refreshToken };
     }
 
-    async updateRefreshToken(userId: string, refreshToken: string) {
+    async updateRefreshToken(sessionId: number, refreshToken: string, tokenVersion?: number) {
         const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
 
-        await this.userRepository.update(
-            { id: userId },
-            { hashedRefreshToken },
+        return await this.userSessionRepository.update(
+            { id: sessionId },
+            { hashedRT: hashedRefreshToken, tokenVersion }
         );
     }
 
-    async refreshTokens(userId: string, refreshToken: string){
+    async refreshTokens(refreshToken: string){
+
+        if(!refreshToken) throw new UnauthorizedException('Refresh token necesario.');
 
         // 1. verificar criptográficamente que este token fue firmado con JWT_REFRESH_SECRET
-        let payload;
-
+        let payload: any;
+        
         try {
             payload = await this.jwtService.verifyAsync(refreshToken, {
                 secret: process.env.JWT_REFRESH_SECRET,
@@ -179,42 +182,65 @@ export class AuthService {
             throw new UnauthorizedException('Refresh Token inválido o expirado.');
         }
 
-        // 2. el token debe pertenecer al mismo usuario
-        if(payload.identifier !== userId) throw new UnauthorizedException('Refresh Token no corresponde al usuario.');
+        const { sessionId } = payload;
 
-        // 3. buscar el usuario con el refreshToken guardado
-        const user = await this.userRepository.findOne({
-            where: { id: userId },
-            select: ['id', 'email', 'hashedRefreshToken'],
+        // 2-. buscar la sesion
+        const session = await this.userSessionRepository.findOne({
+            where: { id: sessionId },
+            select: ['id', 'hashedRT', 'status', 'tokenVersion'],
+            relations: ['user'],
         });
 
-        if(!user || !user.hashedRefreshToken) throw new ForbiddenException('Acceso Denegado.');
+        if(!session || !session.status) throw new UnauthorizedException('Sesión no encontrada o cerrada.');
+        // validamos que exista un refreshToken registrado antes de hacer la comparacion de el mismo, puesto que si no, da error
+        if(!session.hashedRT) throw new UnauthorizedException('La sesión no tiene refreshToken registrado.');
+
+        if(payload.tokenVersion !== session.tokenVersion){
+            await this.userSessionRepository.update({ id: sessionId }, { status: false })
+            throw new ForbiddenException('Refresh Token inválido, no es posible volver a usar este Token.')
+        }
 
         // 4. comparar el refresh token enviado con el almacenado (hash)
         const rtMatches = await bcrypt.compare(
             refreshToken,
-            user.hashedRefreshToken
+            session.hashedRT
         );
-
-        if(!rtMatches) throw new ForbiddenException('RefreshToken invalido.');
-
+        
+        if(!rtMatches){
+            // invalidamos sesion inmediatamente
+            await this.userSessionRepository.update(
+                { id: sessionId },
+                { status: false }
+            );
+            
+            throw new ForbiddenException('Refresh Token inválido.');
+        }
+        
+        const newTokenVersion = session.tokenVersion += 1;
         // 5. generar nuevos tokens
-        const tokens = await this.getTokens(user.id, user.email);
+        const tokens = await this.getTokens(session.user.id, session.user.email, session.id, newTokenVersion);
+
         // 6. guardar el nuevo refresh token con hash
-        await this.updateRefreshToken(user.id, tokens.refreshToken);
+        await this.updateRefreshToken(session.id, tokens.refreshToken, newTokenVersion);
 
         return tokens;
     }
 
-    async logout(userId: string){
-        await this.userRepository.update(
-            { id: userId },
-            { hashedRefreshToken: null }
+    async logout(sessionId: number){
+
+        await this.userSessionRepository.update(
+            { id: sessionId },
+            { status: false, hashedRT: null }
         );
+
+        return { message: 'Sesión cerrada.' }
     }
 
-    async createUserSession(userId: string, refreshToken: string, ip: string, userAgent: string, expiresAt: Date){
-        const refreshTokenHashed = bcrypt.hashSync(refreshToken, 10);
+    async createUserSession(userId: string, refreshToken: string | null, ip: string, userAgent: string, expiresAt: Date){
+        // asignamos a la variable la posibilidad de que venga null en su valor
+        let refreshTokenHashed: string | null = null;
+        // si refreshToken tiene un valor se hashea, si refreshToken es null no hace nada
+        if(refreshToken) refreshTokenHashed = bcrypt.hashSync(refreshToken, 10);
 
         const userSession = this.userSessionRepository.create({
             hashedRT: refreshTokenHashed,

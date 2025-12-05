@@ -22,9 +22,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         });
     }
     
-    async validate(payload: JwtPayload): Promise<User> {
+    async validate(payload: JwtPayload){
 
-        const { identifier } = payload;
+        const { identifier, sessionId } = payload;
 
         const user = await this.userRepository.findOne({
             where: { id: identifier },
@@ -35,7 +35,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         if(!user.isActive) 
             throw new UnauthorizedException('Usuario inactivo, favor comunicarse con un administrador.');
 
-        return user;
+        return { id: user.id, email: user.email, role: user.typeUser.id, sessionId };
     }
 
 }

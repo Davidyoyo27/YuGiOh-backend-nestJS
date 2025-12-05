@@ -33,8 +33,7 @@ export class RolesGuard implements CanActivate {
     }
 
     // 3. Comparar roles
-    // const userRole = user.typeUser?.type_name;
-    const userRole = user.typeUser?.id;
+    const userRole = user.role;
 
     if (!requiredRoles.includes(userRole)) {
       throw new ForbiddenException(`Acceso denegado, su cuenta no posee los privilegios para acceder.`);

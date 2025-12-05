@@ -63,13 +63,6 @@ export class User {
     })
     date_created: Date;
 
-    @Column({
-        type: 'text',
-        nullable: true,
-        select: false,
-    })
-    hashedRefreshToken: string | null;
-
     // relacion
     @ManyToOne(
         () => UserType,
@@ -89,5 +82,5 @@ export class User {
         () => UserSessions,
         (session) => session.user 
     )
-    user_session: UserSessions;
+    userSession: UserSessions;
 }
