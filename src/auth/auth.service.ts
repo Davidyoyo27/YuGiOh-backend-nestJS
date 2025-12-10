@@ -55,17 +55,20 @@ export class AuthService {
         //                                                       refreshToken null inicialmente
         const userSession = await this.createUserSession(user.id, null, reqData.ip, reqData.userAgent, timeExpirationToken);
 
+        let max_session: number = Number(process.env.MAX_SESSIONS_USER) || 0;
+        await this.maxSessionsUser(user.id, max_session);
+
         // generamos accessToken y refreshToken
         const tokens = await this.getTokens(user.id, user.email, userSession.id, userSession.tokenVersion);
         // guardamos el refreshToken en la BD
         await this.updateRefreshToken(userSession.id, tokens.refreshToken);
 
         return {
-            ok: true, 
-            msg: 'Logeado con exito!', 
-            tokens: { 
-                accessToken: tokens.accessToken, 
-                refreshToken: tokens.refreshToken 
+            ok: true,
+            msg: 'Logeado con exito!',
+            tokens: {
+                accessToken: tokens.accessToken,
+                refreshToken: tokens.refreshToken
             }
         }
     }
@@ -167,13 +170,13 @@ export class AuthService {
         );
     }
 
-    async refreshTokens(refreshToken: string){
+    async refreshTokens(refreshToken: string) {
 
-        if(!refreshToken) throw new UnauthorizedException('Refresh token necesario.');
+        if (!refreshToken) throw new UnauthorizedException('Refresh token necesario.');
 
         // 1. verificar criptográficamente que este token fue firmado con JWT_REFRESH_SECRET
         let payload: any;
-        
+
         try {
             payload = await this.jwtService.verifyAsync(refreshToken, {
                 secret: process.env.JWT_REFRESH_SECRET,
@@ -191,11 +194,11 @@ export class AuthService {
             relations: ['user'],
         });
 
-        if(!session || !session.status) throw new UnauthorizedException('Sesión no encontrada o cerrada.');
+        if (!session || !session.status) throw new UnauthorizedException('Sesión no encontrada o cerrada.');
         // validamos que exista un refreshToken registrado antes de hacer la comparacion de el mismo, puesto que si no, da error
-        if(!session.hashedRT) throw new UnauthorizedException('La sesión no tiene refreshToken registrado.');
+        if (!session.hashedRT) throw new UnauthorizedException('La sesión no tiene refreshToken registrado.');
 
-        if(payload.tokenVersion !== session.tokenVersion){
+        if (payload.tokenVersion !== session.tokenVersion) {
             await this.userSessionRepository.update({ id: sessionId }, { status: false })
             throw new ForbiddenException('Refresh Token inválido, no es posible volver a usar este Token.')
         }
@@ -205,17 +208,23 @@ export class AuthService {
             refreshToken,
             session.hashedRT
         );
-        
-        if(!rtMatches){
+
+        if (!rtMatches) {
             // invalidamos sesion inmediatamente
             await this.userSessionRepository.update(
                 { id: sessionId },
                 { status: false }
             );
-            
+
             throw new ForbiddenException('Refresh Token inválido.');
         }
-        
+
+        // El refresh fue valido actualizamos el lastUsedAt
+        await this.userSessionRepository.update(
+            { id: sessionId },
+            { lastUsedAt: new Date() }
+        );
+
         const newTokenVersion = session.tokenVersion += 1;
         // 5. generar nuevos tokens
         const tokens = await this.getTokens(session.user.id, session.user.email, session.id, newTokenVersion);
@@ -226,7 +235,7 @@ export class AuthService {
         return tokens;
     }
 
-    async logout(sessionId: number){
+    async logout(sessionId: number) {
 
         await this.userSessionRepository.update(
             { id: sessionId },
@@ -236,11 +245,11 @@ export class AuthService {
         return { message: 'Sesión cerrada.' }
     }
 
-    async createUserSession(userId: string, refreshToken: string | null, ip: string, userAgent: string, expiresAt: Date){
+    async createUserSession(userId: string, refreshToken: string | null, ip: string, userAgent: string, expiresAt: Date) {
         // asignamos a la variable la posibilidad de que venga null en su valor
         let refreshTokenHashed: string | null = null;
         // si refreshToken tiene un valor se hashea, si refreshToken es null no hace nada
-        if(refreshToken) refreshTokenHashed = bcrypt.hashSync(refreshToken, 10);
+        if (refreshToken) refreshTokenHashed = bcrypt.hashSync(refreshToken, 10);
 
         const userSession = this.userSessionRepository.create({
             hashedRT: refreshTokenHashed,
@@ -253,6 +262,35 @@ export class AuthService {
         await this.userSessionRepository.save(userSession);
 
         return userSession;
+    }
+
+    // funcion que maneja el maximo de sesiones por usuario y 
+    // si este se excede en dichas sesiones se "elimina" la mas antigua
+    async maxSessionsUser(userId: string, maxSessions: number) {
+        const sessions = await this.userSessionRepository.find({
+            where: { user: { id: userId }, status: true },
+            select: ['id', 'lastUsedAt', 'status'],
+            order: { lastUsedAt: 'DESC' }
+        });
+
+        if (sessions.length <= maxSessions) return;
+
+        // cantidad total de sesiones del usuario
+        const totalSessions = sessions.map(item => item.id);
+        // maximo de sesiones activas que SI deberia tener el usuario
+        const lastsSessions = totalSessions.slice(-3);
+        // sesiones viejas y que seran cerradas, no las nuevas
+        const sessionToClose = totalSessions.filter(item => !lastsSessions.includes(item));
+
+        if (sessionToClose.length === 0) return;
+
+        await this.userSessionRepository
+            .createQueryBuilder()
+            .update(UserSessions)
+            .set({ status: false })
+            .where('id IN (:...id)', { id: sessionToClose })
+            .execute();
+
     }
 
 }
