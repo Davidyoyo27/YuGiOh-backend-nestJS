@@ -8,7 +8,7 @@ export class UserSessions {
     id: number;
 
     @Column({
-        type: 'text', 
+        type: 'text',
         nullable: true,
     })
     hashedRT: string | null;
@@ -42,6 +42,13 @@ export class UserSessions {
         nullable: true,
     })
     expiresAt: Date;
+
+    // última vez que el usuario utilizó esa sesión para hacer una petición autenticada.
+    @Column({
+        type: 'timestamp',
+        nullable: true,
+    })
+    lastUsedAt: Date;
 
     @Column({
         type: 'bool',

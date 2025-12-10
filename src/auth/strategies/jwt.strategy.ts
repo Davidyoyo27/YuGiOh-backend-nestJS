@@ -1,11 +1,14 @@
+import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt, Strategy } from "passport-jwt";
-import { User } from "src/user/entities/user.entity";
-import { JwtPayload } from "../interfaces/jwt-payload.interfaces";
+import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { ConfigService } from "@nestjs/config";
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+
+import { User } from "src/user/entities/user.entity";
+import { UserSessions } from "../entities/user-sessions.entity";
+
+import { JwtPayload } from "../interfaces/jwt-payload.interfaces";
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -13,6 +16,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     constructor(
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
+
+        @InjectRepository(UserSessions)
+        private readonly userSessionRepository: Repository<UserSessions>,
 
         configService: ConfigService,
     ) {
@@ -34,6 +40,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         if(!user) throw new UnauthorizedException('Token invalido.');
         if(!user.isActive) 
             throw new UnauthorizedException('Usuario inactivo, favor comunicarse con un administrador.');
+
+        // actualizamos la fecha cada vez que se utilizo una sesion 
+        // para hacer una peticion autenticada (acceso con access token)
+        await this.userSessionRepository.update(
+            { id: sessionId },
+            { lastUsedAt: new Date() }
+        );
 
         return { id: user.id, email: user.email, role: user.typeUser.id, sessionId };
     }
