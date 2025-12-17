@@ -31,6 +31,22 @@ export const getClientData = (req: Request): RequestMetaData => {
 }
 
 // genera cantidad de tiempo en dias           ↓↓↓↓
-export function generateTimeExpirationInDays(timeDays: number){
+export function generateTimeExpirationInDays(timeDays: number) {
     return new Date(Date.now() + timeDays * 24 * 60 * 60 * 1000); // tiempo en milisegundos desde el Date.now()
+}
+
+export function formatDateChile(date?: Date | null): Array<string> {
+    if(!date) return ['fecha no disponible'];
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+
+    const dateFinal = `${year}-${month}-${day}`;
+    const hourFinal = `${hours}:${minutes}:${seconds}`;
+
+    return [dateFinal, hourFinal];
 }

@@ -6,13 +6,17 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/user/entities/user.entity';
 import { TokenReset } from 'src/user/entities/token-reset.entity';
 import { UserSessions } from './entities/user-sessions.entity';
+import { LoginAttempts } from './entities/login-attempts.entity';
 
 import { LoginUserDto } from './dto/login-user.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 
 import bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { generateAleatoryToken, generateTimeExpirationInMinutes, generateTimeExpirationInDays } from 'src/common/utils/functions';
+import {
+    generateAleatoryToken, generateTimeExpirationInMinutes,
+    generateTimeExpirationInDays, formatDateChile
+} from 'src/common/utils/functions';
 import { EmailService } from 'src/email/email.service';
 import { RequestMetaData } from './interfaces/request-meta-data.interfaces';
 
@@ -29,6 +33,9 @@ export class AuthService {
         @InjectRepository(UserSessions)
         private readonly userSessionRepository: Repository<UserSessions>,
 
+        @InjectRepository(LoginAttempts)
+        private readonly userLoginAttemptRepository: Repository<LoginAttempts>,
+
         private readonly jwtService: JwtService,
 
         private readonly emailService: EmailService,
@@ -44,10 +51,27 @@ export class AuthService {
         });
 
         if (!user) throw new UnauthorizedException('Credenciales incorrectas.')
-        if (!bcrypt.compareSync(password, user.password))
+
+        // verificar si el usuario puede hacer login (no esta bloqueado)
+        const canLoginResult = await this.canUserLogin(user.id);
+
+        if (!canLoginResult.canLogin) throw new UnauthorizedException(canLoginResult.message);
+
+        if (!bcrypt.compareSync(password, user.password)) {
+            // si la contraseña es incorrecta, registramos el intento fallido
+            this.loginAttemptByUser(user.id);
             throw new UnauthorizedException('Credenciales incorrectas.')
+        }
+
         if (!user.isActive)
-            throw new UnauthorizedException('Cuenta inactiva! Debe realizar el proceso de activación de su cuenta o comunicarse con un Administrador.')
+            throw new UnauthorizedException
+                ('Cuenta inactiva! Debe realizar el proceso de activación de su cuenta o comunicarse con un Administrador.')
+
+        // si el login es exitoso, RESETEAMOS los intentos fallidos
+        await this.userLoginAttemptRepository.update(
+            { user: { id: user.id } },
+            { attempts: 0, lockedUntil: null, lastAttemptAt: null }
+        );
 
         const timeExpirationToken = generateTimeExpirationInDays(1);
 
@@ -293,4 +317,100 @@ export class AuthService {
 
     }
 
+    // funcion que verifica los intentos fallidos del usuario para iniciar sesion, en caso de fallar 
+    // la cantidad determinada de estos intentos su cuenta se bloquea por X cantidad de tiempo
+    async loginAttemptByUser(userId: string) {
+
+        // buscamos si existe algun registro asociado a ese usuario
+        const searchUser = await this.userLoginAttemptRepository.findOne({ where: { user: { id: userId } } });
+
+        const now = new Date();
+
+        // si no existe, lo creamos y salir
+        if (!searchUser) {
+            const newLogAttempt = await this.userLoginAttemptRepository.create({
+                attempts: 1,  // primer intento fallido
+                lastAttemptAt: now,
+                user: { id: userId }
+            });
+
+            await this.userLoginAttemptRepository.save(newLogAttempt);
+            return;
+        }
+
+        // verificamos su el bloqueo sigue activo
+        if (searchUser?.lockedUntil && searchUser.lockedUntil > now) {
+            return;  // no incrementamos intentos ni hacemos cambios
+        }
+
+        // si hay bloqueo pero ya expiro, reseteamos
+        if (searchUser.lockedUntil && searchUser.lockedUntil <= now) {
+            await this.userLoginAttemptRepository.update(
+                { id: searchUser.id },
+                {
+                    attempts: 0,
+                    lastAttemptAt: now,
+                    lockedUntil: null
+                }
+            )
+            return;
+        }
+
+        // incrementamos intentos (solo si hay bloqueo activo)
+        const newAttempt = (searchUser.attempts || 0) + 1;
+        let lockedUntil: Date | null = null;
+
+        // verificar si es el 4to intento y si es asi, debemos bloquear (al 4to intento fallido)
+        if (newAttempt >= 4) {
+            // le sumamos 8 horas a la fecha y hora actual
+            lockedUntil = new Date(Date.now() + (+process.env.HOURS_USER_LOCKED_FAILED_LOGIN! * 60 * 60 * 1000));
+        }
+
+        // actualizamos
+        await this.userLoginAttemptRepository.update(
+            { id: searchUser.id },
+            {
+                attempts: newAttempt,
+                lockedUntil,
+                lastAttemptAt: now
+            }
+        );
+    }
+
+    // verifica si el usuario posee o no un bloqueo en el login y permite si este pueden o no iniciar sesion
+    async canUserLogin(userId: string): Promise<{ canLogin: boolean; message?: string }> {
+        
+        const loginAttempt = await this.userLoginAttemptRepository.findOne({
+            where: { user: { id: userId } }
+        });
+
+        if (!loginAttempt) {
+            return { canLogin: true }
+        }
+
+        const now = new Date();
+
+        // verificar si el bloqueo aun esta activo
+        if (loginAttempt.lockedUntil && loginAttempt.lockedUntil > now) {
+            const formattedDate = formatDateChile(loginAttempt.lockedUntil);
+            return {
+                canLogin: false,
+                message: `Hemos detectado varios intentos fallidos por lo que tu cuenta ha sido bloqueada temporalmente.` +
+                    `\nEl acceso se reestablecerá el ${formattedDate[0]} a las ${formattedDate[1]} hrs.`
+            };
+        }
+
+        // si hay fecha de bloqueo pero ya expiro, limpiarla automaticamente
+        if (loginAttempt.lockedUntil && loginAttempt.lockedUntil <= now) {
+            await this.userLoginAttemptRepository.update(
+                { id: loginAttempt.id },
+                { lockedUntil: null, attempts: 0 }
+            );
+            return { canLogin: true };
+        }
+
+        // si no hay bloqueo, puede hacer login
+        return { canLogin: true };
+    }
+    
 }
