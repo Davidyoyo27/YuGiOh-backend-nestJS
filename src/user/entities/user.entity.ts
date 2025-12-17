@@ -2,6 +2,7 @@ import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "ty
 import { UserType } from "./user-type.entity";
 import { TokenReset } from "./token-reset.entity";
 import { UserSessions } from "src/auth/entities/user-sessions.entity";
+import { LoginAttempts } from "src/auth/entities/login-attempts.entity";
 
 @Entity()
 export class User {
@@ -83,4 +84,10 @@ export class User {
         (session) => session.user 
     )
     userSession: UserSessions;
+
+    @OneToMany(
+        () => LoginAttempts,
+        (loginUser) => loginUser.user
+    )
+    userLogin: LoginAttempts;
 }
