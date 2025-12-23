@@ -10,6 +10,7 @@ import { UserType } from 'src/user/entities/user-type.entity';
 import { TokenReset } from 'src/user/entities/token-reset.entity';
 import { UserSessions } from './entities/user-sessions.entity';
 import { LoginAttempts } from './entities/login-attempts.entity';
+import { IpRateLimit } from './entities/login-ip-rate-limit.entity';
 
 import { UserModule } from 'src/user/user.module';
 import { EmailModule } from 'src/email/email.module';
@@ -29,7 +30,7 @@ import { JwtModule } from '@nestjs/jwt';
 
     ConfigModule,
 
-    TypeOrmModule.forFeature([ User, UserType, TokenReset, UserSessions, LoginAttempts ]),
+    TypeOrmModule.forFeature([ User, UserType, TokenReset, UserSessions, LoginAttempts, IpRateLimit ]),
 
     // PassportModule para que AuthGuard() funcione donde lo deseas ocupar
     PassportModule.register({ defaultStrategy: 'jwt' }),
