@@ -7,6 +7,7 @@ import { User } from 'src/user/entities/user.entity';
 import { TokenReset } from 'src/user/entities/token-reset.entity';
 import { UserSessions } from './entities/user-sessions.entity';
 import { LoginAttempts } from './entities/login-attempts.entity';
+import { IpRateLimit } from './entities/login-ip-rate-limit.entity';
 
 import { LoginUserDto } from './dto/login-user.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
@@ -15,7 +16,7 @@ import bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import {
     generateAleatoryToken, generateTimeExpirationInMinutes,
-    generateTimeExpirationInDays, formatDateChile
+    generateTimeExpirationInDays, formatDateChile, resolveLockLevel
 } from 'src/common/utils/functions';
 import { EmailService } from 'src/email/email.service';
 import { RequestMetaData } from './interfaces/request-meta-data.interfaces';
@@ -36,6 +37,9 @@ export class AuthService {
         @InjectRepository(LoginAttempts)
         private readonly userLoginAttemptRepository: Repository<LoginAttempts>,
 
+        @InjectRepository(IpRateLimit)
+        private readonly loginIPRateLimitRepository: Repository<IpRateLimit>,
+
         private readonly jwtService: JwtService,
 
         private readonly emailService: EmailService,
@@ -44,22 +48,32 @@ export class AuthService {
     async login(loginUserDto: LoginUserDto, reqData: RequestMetaData) {
 
         const { password, email } = loginUserDto;
+        const { ip } = reqData;
 
         const user = await this.userRepository.findOne({
             where: { email },
             select: { email: true, password: true, id: true, isActive: true }
         });
 
-        if (!user) throw new UnauthorizedException('Credenciales incorrectas.')
+        if (!user) {
+            // si el email no existe de igual manera cuenta el intento de IP
+            await this.checkIpRateLimit(ip);
+            throw new UnauthorizedException('Credenciales incorrectas.');
+        }
 
         // verificar si el usuario puede hacer login (no esta bloqueado)
+        // bloqueo por intentos de login fallidos
         const canLoginResult = await this.canUserLogin(user.id);
+        // bloqueo por IP por intentos fallidos
+        const canLoginResByIP = await this.canUserLoginIP(ip);
 
         if (!canLoginResult.canLogin) throw new UnauthorizedException(canLoginResult.message);
+        if (!canLoginResByIP.canLogin) throw new UnauthorizedException(canLoginResByIP.message);
 
         if (!bcrypt.compareSync(password, user.password)) {
             // si la contraseña es incorrecta, registramos el intento fallido
-            this.loginAttemptByUser(user.id);
+            await this.loginAttemptByUser(user.id);
+            await this.checkIpRateLimit(ip);
             throw new UnauthorizedException('Credenciales incorrectas.')
         }
 
@@ -67,11 +81,9 @@ export class AuthService {
             throw new UnauthorizedException
                 ('Cuenta inactiva! Debe realizar el proceso de activación de su cuenta o comunicarse con un Administrador.')
 
-        // si el login es exitoso, RESETEAMOS los intentos fallidos
-        await this.userLoginAttemptRepository.update(
-            { user: { id: user.id } },
-            { attempts: 0, lockedUntil: null, lastAttemptAt: null }
-        );
+        // reseteamos intentos fallidos de login e IP por login exitoso
+        await this.resetLoginAttempts(user.id);
+        await this.resetIpAttempts(ip);
 
         const timeExpirationToken = generateTimeExpirationInDays(1);
 
@@ -379,7 +391,7 @@ export class AuthService {
 
     // verifica si el usuario posee o no un bloqueo en el login y permite si este pueden o no iniciar sesion
     async canUserLogin(userId: string): Promise<{ canLogin: boolean; message?: string }> {
-        
+
         const loginAttempt = await this.userLoginAttemptRepository.findOne({
             where: { user: { id: userId } }
         });
@@ -412,5 +424,125 @@ export class AuthService {
         // si no hay bloqueo, puede hacer login
         return { canLogin: true };
     }
-    
+
+    // si el login es exitoso, RESETEAMOS los intentos fallidos
+    async resetLoginAttempts(userId: string) {
+        await this.userLoginAttemptRepository.update(
+            { user: { id: userId } },
+            { attempts: 0, lockedUntil: null, lastAttemptAt: null }
+        );
+    }
+
+    // funcion que identifica la IP y registra intentos fallidos de login de esta
+    // se bloquea dicho login a la IP cuando se alcanzan los 10 intentos
+    async checkIpRateLimit(ip: string) {
+
+        // buscamos algun registro por la IP del dispositivo que esta realizando el login
+        const ipExists = await this.loginIPRateLimitRepository.findOne({
+            where: { ip },
+        });
+
+        const now = new Date();
+
+        // si no existe algun registro con esa IP, lo creamos
+        if (!ipExists) {
+            const ipLoginAttempt = await this.loginIPRateLimitRepository.create({
+                ip,
+                attempts: 1,  // con un intento fallido
+                createdAt: now,
+            });
+
+            await this.loginIPRateLimitRepository.save(ipLoginAttempt);
+            return;
+        }
+
+        // verificar que si hay bloqueo y este es menor al tiempo actual (ya expiro), reseteamos los intentos
+        if (ipExists.lockedUntil && ipExists.lockedUntil <= now) {
+            await this.loginIPRateLimitRepository.update(
+                { ip },
+                { lockedUntil: null }
+            );
+            return;
+        }
+
+        // poliza de bloqueo con la cantidad de tiempo de bloqueo 
+        // respecto de la cantidad de intentos que ha realizado el usuario, 
+        // esto vendria siendo el bloqueo progresivo
+        const LOCK_POLICY = [
+            { minAttempts: 10, lockMinutes: 10 },
+            { minAttempts: 15, lockMinutes: 30 },
+            { minAttempts: 20, lockMinutes: 60 },
+            { minAttempts: 30, lockMinutes: 1440 },
+        ];
+
+        const newAttempt = ipExists.attempts + 1;
+        const { level, lockMinutes } = resolveLockLevel(newAttempt, LOCK_POLICY)
+
+        // si el nivel es mayor al lockLevel existente en la BD 
+        // le asignamos el nuevo nivel, un nuevo intento y el tiempo de bloqueo asignado
+        if (level > ipExists.lockLevel && lockMinutes) {
+            await this.loginIPRateLimitRepository.update(
+                { ip },
+                {
+                    attempts: newAttempt,
+                    lockLevel: level,
+                    lockedUntil: generateTimeExpirationInMinutes(lockMinutes)
+                }
+            )
+
+            return;
+        }
+
+        // si no sube de nivel, como base simplemente aumentamos los intentos
+        await this.loginIPRateLimitRepository.update(
+            { ip },
+            {
+                attempts: newAttempt,
+                lastAttemptAt: new Date(),
+            }
+        );
+
+    }
+
+    // verificamos si el bloqueo esta activo o no para permitir al usuario hacer login
+    async canUserLoginIP(ip: string): Promise<{ canLogin: boolean; message?: string }> {
+
+        const searchIP = await this.loginIPRateLimitRepository.findOne({
+            where: { ip }
+        });
+
+        if (!searchIP) return { canLogin: true };
+
+        const now = new Date();
+
+        // si el bloqueo esta activo
+        if (searchIP.lockedUntil && searchIP.lockedUntil > now) {
+            const formattedDate = formatDateChile(searchIP.lockedUntil);
+            return {
+                canLogin: false,
+                message: `Hemos detectado actividad inusual desde tu dirección IP.` +
+                    `\nPor seguridad, el acceso ha sido bloqueado temporalmente hasta el ${formattedDate[0]} a las ${formattedDate[1]} hrs.`
+            }
+        }
+
+        // si el bloqueo ya expiro
+        if (searchIP.lockedUntil && searchIP.lockedUntil <= now) {
+            await this.loginIPRateLimitRepository.update(
+                { ip },
+                { lockedUntil: null }
+            );
+            return { canLogin: true }
+        }
+
+        return { canLogin: true };
+    }
+
+    // si el login es exitoso, RESETEAMOS los intentos fallidos en este caso de la IP
+    async resetIpAttempts(ip: string) {
+        await this.loginIPRateLimitRepository.update(
+            { ip },
+            { attempts: 0, lockedUntil: null, lastAttemptAt: new Date() }
+        );
+    }
+
 }
