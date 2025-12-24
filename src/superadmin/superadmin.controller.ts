@@ -1,13 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Query, UseGuards, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query, UseGuards } from '@nestjs/common';
 import { SuperadminService } from './superadmin.service';
+
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
-import { UuidValidationPipe } from 'src/common/pipes/uuid-validation.pipe';
 import { UpdateUserDto } from 'src/user/dto/update-user.dto';
+import { UpdateUserByAdminDto } from 'src/admin/dto/update-user-by-admin.dto';
+
+import { UuidValidationPipe } from 'src/common/pipes/uuid-validation.pipe';
+import { OnlyNumbersPipe } from 'src/common/pipes/id-number-validation.pipe';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
-import { UpdateUserByAdminDto } from 'src/admin/dto/update-user-by-admin.dto';
-import { OnlyNumbersPipe } from 'src/common/pipes/id-number-validation.pipe';
 
 @Controller('superadmin')
 export class SuperadminController {
@@ -76,6 +78,22 @@ export class SuperadminController {
     @Param('id', OnlyNumbersPipe) id: number,
   ){
     return this.superadminService.userFinishActiveSession(id);
+  }
+
+  // listar registros de la tabla que guarda los intentos de login fallidos de usuarios
+  @UseGuards( AuthGuard(), RolesGuard )
+  @Roles(4)
+  @Get('superadministrator/attempts-login-users')
+  getAllLoginAttempts(){
+    return this.superadminService.getAllLoginAttempts();
+  }
+
+  // listar registros de IPs que guarda los intentos fallidos de login al sistema
+  @UseGuards( AuthGuard(), RolesGuard )
+  @Roles(4)
+  @Get('superadministrator/attempts-login-by-ip')
+  getAllLoginAttemptsByIP(){
+    return this.superadminService.getAllLoginAttemptsByIP();
   }
 
 }
