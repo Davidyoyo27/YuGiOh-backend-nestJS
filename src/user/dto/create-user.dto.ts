@@ -6,7 +6,6 @@ import { Match } from "../decorators/match.decorator";
 import { IsOnlyLetters } from "../decorators/only-letters.decorator";
 import { Transform } from "class-transformer";
 import { IsEmailUnique } from "../decorators/validators/is-email-unique.validator"
-import { IsNickNameUnique } from "../decorators/validators/is-nickname-unique.validator"
 
 export class CreateUserDto {
 
@@ -40,10 +39,5 @@ export class CreateUserDto {
     @IsOnlyLetters('El apellido solo puede contener letras')
     @Transform(({ value }) => value?.trim() || null)
     lastName?: string;
-
-    @IsString()
-    @IsOptional()
-    @IsNickNameUnique()
-    nickName?: string;
 
 }

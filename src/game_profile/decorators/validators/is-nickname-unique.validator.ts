@@ -7,7 +7,7 @@ import {
     ValidatorConstraintInterface,
     ValidationArguments,
 } from 'class-validator';
-import { User } from 'src/user/entities/user.entity';
+import { GameProfile } from 'src/game_profile/entities/game_profile.entity';
 import { Repository } from 'typeorm';
 
 
@@ -15,13 +15,14 @@ import { Repository } from 'typeorm';
 @Injectable()
 export class IsNickNameUniqueConstraint implements ValidatorConstraintInterface {
     constructor(
-        @InjectRepository(User)
-        private readonly userRepository: Repository<User>,
+        @InjectRepository(GameProfile)
+        private readonly gameProfileRepository: Repository<GameProfile>,
     ) { }
 
     async validate(nickName: string, args: ValidationArguments) {
         if (!nickName) return true; // si es null o vacío, se permite
-        const user = await this.userRepository.findOne({ where: { nickName } });
+        // const user = await this.userRepository.findOne({ where: { nickName } });
+        const user = await this.gameProfileRepository.findOne({ where: { nickName } });
         return !user;
     }
 

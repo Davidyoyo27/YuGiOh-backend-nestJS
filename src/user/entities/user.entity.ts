@@ -1,8 +1,9 @@
-import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { UserType } from "./user-type.entity";
 import { TokenReset } from "./token-reset.entity";
 import { UserSessions } from "src/auth/entities/user-sessions.entity";
 import { LoginAttempts } from "src/auth/entities/login-attempts.entity";
+import { GameProfile } from "src/game_profile/entities/game_profile.entity";
 
 @Entity()
 export class User {
@@ -30,13 +31,6 @@ export class User {
         nullable: true,
     })
     lastName: string | null;
-
-    @Column({
-        type: 'text',
-        unique: true,
-        nullable: true,
-    })
-    nickName: string | null;
 
     @Column({
         type: 'text',
@@ -90,4 +84,12 @@ export class User {
         (loginUser) => loginUser.user
     )
     userLogin: LoginAttempts;
+
+    // solo referencia logica a la relacion uno a uno
+    @OneToOne(
+        () => GameProfile,
+        (profile) => profile.user
+    )
+    gameProfile: GameProfile;
+
 }

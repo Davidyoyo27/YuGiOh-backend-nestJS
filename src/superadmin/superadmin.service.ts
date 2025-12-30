@@ -58,7 +58,6 @@ export class SuperadminService {
       const user = this.userRepository.create({
         ...userData,
         password: bcrypt.hashSync(password, 10),
-        nickName: createUserDto.nickName || null,
         activationCode: code,
         activationCodeExpires: expires,
         typeUser: userType,
@@ -96,7 +95,6 @@ export class SuperadminService {
       const user = this.userRepository.create({
         ...userData,
         password: bcrypt.hashSync(password, 10),
-        nickName: createUserDto.nickName || null,
         activationCode: code,
         activationCodeExpires: expires,
         typeUser: userType,
@@ -147,7 +145,6 @@ export class SuperadminService {
           'user.email',
           'user.name',
           'user.lastName',
-          'user.nickName',
           'user.isActive',
           'typeUser.type_name',
         ])
@@ -162,13 +159,12 @@ export class SuperadminService {
 
   async update(id: string, updateUserDto: UpdateUserDto) {
 
-    const { nickName, lastName, passwordConfirm, ...restData } = updateUserDto;
+    const { lastName, passwordConfirm, ...restData } = updateUserDto;
 
     const user = await this.userRepository.preload({
       id,
       ...restData,
       lastName: lastName === '' ? null : lastName,
-      nickName: nickName === '' ? null : nickName,
     });
 
     if (!user) throw new NotFoundException('Usuario no encontrado.');
@@ -236,7 +232,6 @@ export class SuperadminService {
         'login-attempts.lockedUntil',
         'user.name',
         'user.lastName',
-        'user.nickName',
         'user.email',
       ])
       .getMany();
