@@ -5,6 +5,9 @@ import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { AdminModule } from './admin/admin.module';
 import { SuperadminModule } from './superadmin/superadmin.module';
+import { GameProfileModule } from './game_profile/game_profile.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -21,10 +24,16 @@ import { SuperadminModule } from './superadmin/superadmin.module';
       synchronize: true,
     }),
 
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname,'..','uploads'),
+      serveRoot: '/uploads',
+    }),
+
     UserModule,
     AuthModule,
     AdminModule,
-    SuperadminModule
+    SuperadminModule,
+    GameProfileModule,
   ],
 })
 export class AppModule {}

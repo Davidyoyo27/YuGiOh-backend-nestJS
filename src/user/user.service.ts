@@ -3,18 +3,19 @@ import {
   ConflictException, Injectable,
   InternalServerErrorException, Logger, NotFoundException,
 } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 import { ILike, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { User } from './entities/user.entity';
 import { UserType } from './entities/user-type.entity';
 
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { ChangeUserPasswordDto } from './dto/change-password.dto';
+
 import bcrypt from 'bcrypt';
 import { EmailService } from '../email/email.service';
 import { generateActivationCode, generateTimeExpirationInMinutes } from 'src/common/utils/functions';
-import { ChangeUserPasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class UserService {
@@ -49,7 +50,6 @@ export class UserService {
       const user = this.userRepository.create({
         ...userData,
         password: bcrypt.hashSync(password, 10),
-        nickName: createUserDto.nickName || null,
         activationCode: code,
         activationCodeExpires: expires,
         typeUser: userType,
@@ -80,7 +80,6 @@ export class UserService {
         .select([
           'user.name',
           'user.lastName',
-          'user.nickName',
         ])
         .where('user.typeUserId = :id', { id: 2 })
         .getMany();
@@ -106,7 +105,6 @@ export class UserService {
     const user = await this.userRepository.find({
       where: [
         { name: ILike(`%${term}%`) },
-        { nickName: ILike(`%${term}%`) },
       ],
     });
 
@@ -118,13 +116,12 @@ export class UserService {
 
   async update(id: string, updateUserDto: UpdateUserDto) {
 
-    const { nickName, lastName, ...rest } = updateUserDto;
+    const { lastName, ...rest } = updateUserDto;
 
     const user = await this.userRepository.preload({
       id: id,
       ...rest,
       lastName: lastName === '' ? null : lastName,
-      nickName: nickName === '' ? null : nickName,
     });
 
     if (!user) throw new NotFoundException(`El usuario con el id ${id} no fue encontrado.`);
@@ -132,10 +129,10 @@ export class UserService {
     return this.userRepository.save(user);
   }
 
-  async verifyActivation(emailOrNick: string, code: string) {
+  async verifyActivation(emailUser: string, code: string) {
     const user = await this.userRepository.findOne({
-      // para realizar el filtro puede usar el email o el nickName
-      where: [{ email: emailOrNick }, { nickName: emailOrNick }],
+      // para realizar el filtro puede usar el email
+      where: [{ email: emailUser }],
       select: ['id', 'email', 'activationCode', 'activationCodeExpires', 'isActive'],
     });
 

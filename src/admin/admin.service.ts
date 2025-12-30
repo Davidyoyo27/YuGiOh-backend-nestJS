@@ -32,7 +32,6 @@ export class AdminService {
           'user.email',
           'user.name',
           'user.lastName',
-          'user.nickName',
           'user.isActive',
           'typeUser.type_name'
         ])

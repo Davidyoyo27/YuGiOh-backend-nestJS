@@ -7,10 +7,11 @@ import { User } from './entities/user.entity';
 import { UserType } from './entities/user-type.entity';
 import { TokenReset } from './entities/token-reset.entity';
 import { LoginAttempts } from 'src/auth/entities/login-attempts.entity';
+import { GameProfile } from 'src/game_profile/entities/game_profile.entity';
 
 import { PassportModule } from '@nestjs/passport';
 import { IsEmailUniqueConstraint } from './decorators/validators/is-email-unique.validator';
-import { IsNickNameUniqueConstraint } from './decorators/validators/is-nickname-unique.validator';
+import { IsNickNameUniqueConstraint } from '../game_profile/decorators/validators/is-nickname-unique.validator';
 import { EmailModule } from '../email/email.module'
 
 @Module({
@@ -22,7 +23,7 @@ import { EmailModule } from '../email/email.module'
     IsNickNameUniqueConstraint,
   ],
   imports: [
-    TypeOrmModule.forFeature([ User, UserType, TokenReset, LoginAttempts ]),
+    TypeOrmModule.forFeature([ User, UserType, TokenReset, LoginAttempts, GameProfile ]),
 
     PassportModule.register({ defaultStrategy: 'jwt' }),
 

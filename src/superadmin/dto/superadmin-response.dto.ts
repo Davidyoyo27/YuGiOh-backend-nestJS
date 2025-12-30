@@ -12,8 +12,5 @@ export class SuperAdminResponseDto {
 
     @Expose()
     lastName: string;
-
-    @Expose()
-    nickName: string;
     
 }
