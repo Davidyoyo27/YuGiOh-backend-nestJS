@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { UserType } from "./user-type.entity";
 import { TokenReset } from "./token-reset.entity";
 import { UserSessions } from "src/auth/entities/user-sessions.entity";
@@ -41,6 +41,7 @@ export class User {
 
     @Column({
         type: 'timestamp',
+        precision: 6,
         nullable: true,
         select: false,
     })
@@ -52,10 +53,7 @@ export class User {
     })
     isActive: boolean;
 
-    @Column({ 
-        type: 'timestamp', 
-        default: () => 'CURRENT_TIMESTAMP' 
-    })
+    @CreateDateColumn()
     date_created: Date;
 
     // relacion
