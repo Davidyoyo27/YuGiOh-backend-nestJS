@@ -16,6 +16,7 @@ export class TokenReset {
 
     @Column({
         type: 'timestamp',
+        precision: 6,
         nullable: false,
     })
     expirationToken: Date;

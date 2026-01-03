@@ -22,18 +22,12 @@ export class GameProfile {
     })
     avatarImage?: string;
 
-    @CreateDateColumn({
-        type: 'timestamp',
-        precision: 6
-    })
+    @CreateDateColumn()
     createdAt: Date;
 
     // con @UpdateDateColumn se dispara de manera automatica
     //  cuando se realiza un .save() o un .update()
-    @UpdateDateColumn({
-        type: 'timestamp',
-        precision: 6
-    })
+    @UpdateDateColumn()
     // “última versión válida del registro”
     updatedAt?: Date;
 

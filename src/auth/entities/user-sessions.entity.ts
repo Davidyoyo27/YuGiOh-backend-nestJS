@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { User } from "src/user/entities/user.entity";
 
 @Entity()
@@ -31,14 +31,12 @@ export class UserSessions {
     })
     userAgent: string;
 
-    @Column({
-        type: 'timestamp',
-        default: () => 'CURRENT_TIMESTAMP'
-    })
+    @CreateDateColumn()
     createdAt: Date;
 
     @Column({
         type: 'timestamp',
+        precision: 6,
         nullable: true,
     })
     expiresAt: Date;
@@ -46,6 +44,7 @@ export class UserSessions {
     // última vez que el usuario utilizó esa sesión para hacer una petición autenticada.
     @Column({
         type: 'timestamp',
+        precision: 6,
         nullable: true,
     })
     lastUsedAt: Date;

@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { Injectable } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { Repository, Raw } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { User } from 'src/user/entities/user.entity';
@@ -449,7 +449,6 @@ export class AuthService {
             const ipLoginAttempt = await this.loginIPRateLimitRepository.create({
                 ip,
                 attempts: 1,  // con un intento fallido
-                createdAt: now,
             });
 
             await this.loginIPRateLimitRepository.save(ipLoginAttempt);
