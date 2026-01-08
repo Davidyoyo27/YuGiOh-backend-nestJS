@@ -139,7 +139,7 @@ export class AuthService {
             },
         );
 
-        return { ok: true, message: 'correo de cambio de contraseña enviado.' };
+        return { ok: true, message: 'Correo de cambio de contraseña enviado.' };
     }
 
     async validateTokenReset(token: string) {
