@@ -1,11 +1,13 @@
 import { Column, Entity, Index, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { User } from "./user.entity";
 
+// tabla que almacena los tokens para realizar los cambios 
+// de contraseñas de las cuentas de los usuarios
 @Entity()
 export class TokenReset {
 
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+    @PrimaryGeneratedColumn()
+    id: number;
 
     @Index() // mejora busqueda por token
     @Column({
