@@ -1,5 +1,8 @@
+import { DuelGame } from "src/duel_game/entities/duel-game.entity";
 import { User } from "src/user/entities/user.entity";
+import { UserDuelGame } from "src/user_duel_game/entities/user_duel_game.entity";
 import { Column, CreateDateColumn, Entity, JoinColumn, 
+    OneToMany, 
     OneToOne, PrimaryGeneratedColumn, UpdateDateColumn 
 } from "typeorm";
 
@@ -41,5 +44,17 @@ export class GameProfile {
     )
     @JoinColumn()  // OBLIGATORIO en relaciones 1:1, esto para que reconosca donde vive la clave foranea
     user: User;
+
+    @OneToMany(
+        () => UserDuelGame,
+        (userDuel) => userDuel.gameProfile,
+    )
+    userDuelGameRelation: UserDuelGame[];
+
+    @OneToMany(
+        () => DuelGame,
+        (duelGame) => duelGame.createdBy,
+    )
+    createdDuelGameRelation: DuelGame[];
 
 }

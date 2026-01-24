@@ -8,6 +8,8 @@ import { SuperadminModule } from './superadmin/superadmin.module';
 import { GameProfileModule } from './game_profile/game_profile.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { DuelGameModule } from './duel_game/duel_game.module';
+import { UserDuelGameModule } from './user_duel_game/user_duel_game.module';
 
 @Module({
   imports: [
@@ -34,6 +36,8 @@ import { join } from 'path';
     AdminModule,
     SuperadminModule,
     GameProfileModule,
+    DuelGameModule,
+    UserDuelGameModule,
   ],
 })
 export class AppModule {}
