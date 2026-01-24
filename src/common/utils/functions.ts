@@ -68,3 +68,21 @@ export const resolveLockLevel = (attempts: number, lockPolicy): { level: number;
 
     return { level, lockMinutes };
 }
+
+// funcion para validar si un numero es par o impar
+export function isNumberPairPositive(valor: any) {
+    // 1. Validar formato si es string (regex simple)
+    if (typeof valor === 'string') {
+        if (!/^[1-9][0-9]*[02468]$|^0$/.test(valor)) {
+            return false;
+        }
+        valor = parseInt(valor, 10);
+    }
+
+    // 2. Validación matemática (operador módulo)
+    return typeof valor === 'number' &&
+        !isNaN(valor) &&
+        Number.isInteger(valor) &&
+        valor >= 0 &&
+        valor % 2 === 0;
+}

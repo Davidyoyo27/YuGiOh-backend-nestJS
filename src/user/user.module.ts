@@ -7,7 +7,7 @@ import { User } from './entities/user.entity';
 import { UserType } from './entities/user-type.entity';
 import { TokenReset } from './entities/token-reset.entity';
 import { LoginAttempts } from 'src/auth/entities/login-attempts.entity';
-import { GameProfile } from 'src/game_profile/entities/game_profile.entity';
+import { GameProfile } from 'src/game_profile/entities/game-profile.entity';
 
 import { PassportModule } from '@nestjs/passport';
 import { IsEmailUniqueConstraint } from './decorators/validators/is-email-unique.validator';

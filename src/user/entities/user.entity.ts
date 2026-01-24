@@ -3,7 +3,7 @@ import { UserType } from "./user-type.entity";
 import { TokenReset } from "./token-reset.entity";
 import { UserSessions } from "src/auth/entities/user-sessions.entity";
 import { LoginAttempts } from "src/auth/entities/login-attempts.entity";
-import { GameProfile } from "src/game_profile/entities/game_profile.entity";
+import { GameProfile } from "src/game_profile/entities/game-profile.entity";
 
 @Entity()
 export class User {
@@ -86,7 +86,7 @@ export class User {
     // solo referencia logica a la relacion uno a uno
     @OneToOne(
         () => GameProfile,
-        (profile) => profile.user
+        (profile) => profile.user,
     )
     gameProfile: GameProfile;
 
