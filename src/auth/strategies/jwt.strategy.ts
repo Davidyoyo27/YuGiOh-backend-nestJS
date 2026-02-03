@@ -34,12 +34,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
         const user = await this.userRepository.findOne({
             where: { id: identifier },
-            relations: ['typeUser'],
+            relations: ['typeUser', 'gameProfile'],
         });
 
         if(!user) throw new UnauthorizedException('Token invalido.');
         if(!user.isActive) 
             throw new UnauthorizedException('Usuario inactivo, favor comunicarse con un administrador.');
+
+        // la variable puede ser de tipo string o number, si el usuario no tiene creado un perfil se le asigna
+        // el siguiente valor 'usuario sin perfil', de lo contrario, si tiene perfil, se le asigna el id de ese perfil
+        const profileId: string | number = (!user.gameProfile) ? 'usuario sin perfil' : user.gameProfile.id;
 
         // actualizamos la fecha cada vez que se utilizo una sesion 
         // para hacer una peticion autenticada (acceso con access token)
@@ -48,7 +52,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             { lastUsedAt: new Date() }
         );
 
-        return { id: user.id, email: user.email, role: user.typeUser.id, sessionId };
+        return { id: user.id, email: user.email, role: user.typeUser.id, sessionId, profileId };
     }
 
 }
