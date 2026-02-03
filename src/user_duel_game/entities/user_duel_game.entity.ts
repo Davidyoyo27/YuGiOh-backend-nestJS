@@ -1,5 +1,5 @@
 import {
-    Column, CreateDateColumn, Entity, ManyToOne,
+    Column, Entity, ManyToOne,
     PrimaryGeneratedColumn
 } from "typeorm";
 import { DuelGame } from "src/duel_game/entities/duel-game.entity";
@@ -36,7 +36,16 @@ export class UserDuelGame {
     })
     result: DuelResult | null;
 
-    @CreateDateColumn()
+    @Column({
+        type: 'int',
+        nullable: true
+    })
+    finalLP: number | null;
+
+    @Column({
+        type: 'timestamp',
+        precision: 6,
+    })
     createdAt: Date;
 
     @Column({
