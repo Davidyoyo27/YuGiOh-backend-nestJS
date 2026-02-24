@@ -5,6 +5,7 @@ import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { CurrentUserId } from 'src/common/decorators/current-user-id.decorator';
 import { FinishDuelDto } from './dto/finish-duel.dto';
+import { CancelDuelDto } from 'src/duel_game/dto/cancel-duel.dto';
 
 @Controller('user-duel-game')
 export class UserDuelGameController {
@@ -31,6 +32,18 @@ export class UserDuelGameController {
     @Body() body: FinishDuelDto,
   ){
     return this.userDuelGameService.finishDuel(id, body, profileId);
+  }
+
+  // endpoint cancelacion del duelo
+  @UseGuards(AuthGuard(), RolesGuard)
+  @Roles(2)
+  @Post(':id/cancel-duel')
+  cancelDuel(
+    @Param('id', ParseIntPipe) duelId: number, 
+    @CurrentUserId('profileId') profileId: string | number,
+    @Body() cancelDuelDto: CancelDuelDto
+  ){
+    return this.userDuelGameService.cancelDuel(duelId, profileId, cancelDuelDto);
   }
 
 }

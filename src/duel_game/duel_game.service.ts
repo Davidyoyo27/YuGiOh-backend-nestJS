@@ -1,13 +1,18 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { DuelGame } from './entities/duel-game.entity';
 import { GameProfile } from 'src/game_profile/entities/game-profile.entity';
+import { DuelState } from './entities/duel-state.entity';
+import { UserDuelGame } from 'src/user_duel_game/entities/user_duel_game.entity';
 
 import { CreateDuelGameDto } from './dto/create-duel_game.dto';
+import { ConfirmedDuelCanceledDto } from './dto/confirmed-duel-canceled.dto';
 
 import { isNumberPairPositive } from 'src/common/utils/functions';
+import { DataSource } from 'typeorm';
+import { DuelResult } from 'src/common/utils/duel-result';
 
 @Injectable()
 export class DuelGameService {
@@ -18,6 +23,8 @@ export class DuelGameService {
 
     @InjectRepository(GameProfile)
     private readonly userGameProfileRepository: Repository<GameProfile>,
+
+    private readonly dataSource: DataSource,
   ) { }
 
   async createDuelGame(createDuelGameDto: CreateDuelGameDto, userId: string) {
@@ -46,7 +53,7 @@ export class DuelGameService {
     });
 
     await this.duelGameRepository.save(duel);
-    
+
     return { ok: true, message: 'Duelo creado correctamente.', duel, userGameProfile };
   }
 
@@ -70,4 +77,164 @@ export class DuelGameService {
     return duelsFiltered;
   }
 
+  // muestra todos los duelos cancelados en espera por ser aceptados filtrados por jugador
+  async findAllCanceledDuels(profileId: string | number) {
+
+    if (typeof profileId !== 'number') throw new NotFoundException('No tienes un perfil de jugador creado.');
+
+    const duelGame = await this.duelGameRepository.find({
+      where: {
+        // por estado "verificando"
+        typeState: { id: 5 },
+        // solo los correspondientes a el usuario logeado
+        createdBy: { id: profileId }
+      }
+    });
+
+    // si no se encuentra ningun duelo cancelado hacia el jugador muestra la siguiente validacion
+    if (duelGame.length === 0) return { ok: true, message: 'No se encontro ningún duelo cancelado.' };
+
+    const duelsCanceled = duelGame.map(duels => {
+      return {
+        id: duels.id,
+        typeDuel: duels.typeDuel.description.split(' ')[0],
+        dateFinished: duels.duelDateFinished,
+        typeState: duels.typeState.stateName,
+        canceledBy: duels.createdBy.nickName,
+        cancelReason: duels.cancelReason,
+      }
+    });
+
+    return duelsCanceled;
+  }
+
+  async resultCancelDuel(duelRoomId: number, body: ConfirmedDuelCanceledDto, profileId: string | number) {
+
+    return await this.dataSource.transaction(async (manager) => {
+
+      if (typeof profileId !== 'number') throw new NotFoundException('No tienes un perfil de jugador creado.');
+
+      const duelGame = await manager.findOne(DuelGame, {
+        where: { id: duelRoomId },
+        relations: ['typeState', 'createdBy']
+      });
+
+      if (!duelGame) throw new NotFoundException('No se encontro un duelo cancelado en espera.');
+      // el estado del duelo debe ser necesariamente 5 "verificando" para poder acceder a cancelar este mismo
+      if (duelGame.typeState.id !== 5) throw new BadRequestException('No es posible proceder por el estado del duelo.');
+
+      const playersInDuel = await manager.find(UserDuelGame, {
+        where: { duelGame: { id: duelRoomId } },
+        relations: ['gameProfile']
+      });
+
+      if (!playersInDuel.length) throw new BadRequestException('No hay jugadores asociados al duelo.');
+      // el creador del duelo y quien inicio la cancelacion NO PUEDE APROBAR esta misma
+      if (duelGame.createdBy.id === profileId && playersInDuel.length === 2)
+        throw new BadRequestException('El creador de la sala del duelo no puede confirmar la cancelación.');
+
+      // 3️⃣ Validar que el jugador pertenece al duelo
+      const currentPlayer = playersInDuel.find(
+        player => player.gameProfile.id === profileId
+      );
+
+      if (!currentPlayer) throw new ForbiddenException('No perteneces a este duelo.');
+
+      const duelCanceledState = await manager.findOne(DuelState, { where: { id: 4 } });
+      if (!duelCanceledState) throw new NotFoundException('No existe el estado del duelo requerido.');
+
+      const dateFinished = new Date();
+
+      // si es true
+      if (body.confirmationCanceledDuel) {
+        // actualiza el registro de la sala del duelo
+        const updateResult = await manager
+          .createQueryBuilder()
+          .update(DuelGame)
+          .set({
+            typeState: duelCanceledState,  // cancelado
+            duelDateFinished: dateFinished,
+          })
+          .where('id = :duelRoomId', { duelRoomId })
+          .andWhere('typeStateId = :currentState', { currentState: 5 })  // solo si esta en verificando
+          .execute();
+
+        // 2️⃣ Si no afectó filas → ya no estaba en VERIFYING
+        if (updateResult.affected === 0) throw new BadRequestException('El duelo ya no está en estado válido para cancelación.');
+
+        // actualiza los registros de los jugadores ya dentro de la sala
+        await manager
+          .createQueryBuilder()
+          .update(UserDuelGame)
+          .set({
+            result: DuelResult.CANCELED,
+            finishedAt: dateFinished,
+          })
+          .where('duelGameId = :duelRoomId', { duelRoomId })
+          // Solo actualiza jugadores que estén en estado VERIFYING.
+          .andWhere('result = :currentResult', { currentResult: DuelResult.VERIFYING })
+          .execute();
+
+        return { ok: true, message: 'Resultado procesado correctamente.' };
+      }
+
+      // si es false
+      // si hay dos jugadores se debe identificar cual es el creador y cual es el oponente
+      const creatorId = duelGame.createdBy.id;
+
+      const creator = playersInDuel.find(
+        player => player.gameProfile.id === creatorId
+      );
+
+      const opponent = playersInDuel.find(
+        player => player.gameProfile.id !== creatorId
+      );
+
+      if (!creator || !opponent) throw new BadRequestException('Error determinando a los jugadores.');
+
+      // realizamos la actualizacion de la sala del duelo
+      const duelUpdate = await manager.createQueryBuilder()
+        .update(DuelGame)
+        .set({
+          typeState: duelCanceledState,
+          duelDateFinished: dateFinished,
+        })
+        .where('id = :duelRoomId', { duelRoomId })
+        .andWhere('typeStateId = :currentResult', { currentResult: 5 })  // verificando
+        .execute();
+
+
+      // 2️⃣ Si no afectó filas → ya no estaba en VERIFYING
+      if (duelUpdate.affected === 0) throw new BadRequestException('El duelo ya no está en estado válido para cancelación.');
+
+      // realizamos la actualizacion correspondiente a los jugadores del duelo en este caso asignando Victoria y Derrota a quien corresponda
+      // para esto como son updates atomicos no es posible hacer ambos a la vez entonces se haran dos: uno para el ganador y otro para el perdedor
+      // Creador pierde
+      await manager.createQueryBuilder()
+        .update(UserDuelGame)
+        .set({
+          result: DuelResult.LOSE,
+          finishedAt: dateFinished,
+        })
+        .where('duelGameId = :duelRoomId', { duelRoomId })
+        .andWhere('gameProfileId = :creatorId', { creatorId: creator.gameProfile.id })
+        .andWhere('result = :currentState', { currentState: DuelResult.VERIFYING })
+        .execute();
+
+      // Oponente gana
+      await manager.createQueryBuilder()
+        .update(UserDuelGame)
+        .set({
+          result: DuelResult.WIN,
+          finishedAt: dateFinished,
+        })
+        .where('duelGameId = :duelRoomId', { duelRoomId })
+        .andWhere('gameProfileId = :opponentId', { opponentId: opponent.gameProfile.id })
+        .andWhere('result = :currentState', { currentState: DuelResult.VERIFYING })
+        .execute();
+
+      return { ok: true, message: 'Resultado procesado correctamente.' };
+    });
+  }
+  
 }
