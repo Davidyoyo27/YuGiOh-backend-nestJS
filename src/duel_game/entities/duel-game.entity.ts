@@ -67,4 +67,13 @@ export class DuelGame {
     })
     roomName: string;
 
+    @Column({
+        // se utiliza varchar ya que se especifica 
+        // un largo de 200 caracteres como maximo
+        type: 'varchar',
+        length: 200,
+        nullable: true
+    })
+    cancelReason: string;
+
 }

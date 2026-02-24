@@ -13,6 +13,7 @@ import { FinishDuelDto } from './dto/finish-duel.dto';
 import { DataSource } from 'typeorm';
 import { error } from 'console';
 import { DuelResult } from 'src/common/utils/duel-result';
+import { CancelDuelDto } from 'src/duel_game/dto/cancel-duel.dto';
 
 @Injectable()
 export class UserDuelGameService {
@@ -222,6 +223,71 @@ export class UserDuelGameService {
     });
 
     return { ok: true, message: 'Duelo finalizado correctamente.' };
+  }
+
+  // proceso de cancelacion del duelo (realizado solo por el creadro de la sala)
+  async cancelDuel(duelId: number, profileId: number | string, cancelDuelDto: CancelDuelDto) {
+
+    return await this.dataSource.transaction(async (manager) => {
+
+      const { cancelReason } = cancelDuelDto;
+
+      const duelGame = await manager.findOne(DuelGame, {
+        where: { id: duelId },
+        relations: ['createdBy']
+      });
+
+      if (!duelGame) throw new NotFoundException('No se encontro el duelo que se intenta cancelar.');
+      //   solo uno de los jugadores que pertenecen al duelo pueden cancelar este mismo, 
+      // en este caso "solo el creador mismo del duelo"
+      if (duelGame.createdBy.id !== profileId) throw new BadRequestException('No puedes cancelar este duelo.');
+      if (duelGame.playersJoined === 0) throw new NotFoundException('No se encontro ningún jugador dentro de la sala del duelo.');
+
+      // aplicacion de 2/4 de las reglas de cancelacion de duelos.
+      // 2-. Si hay 2 jugadores → pasa a VERIFYING (5).
+      // 3-. Si hay 1 jugador → pasa directo a CANCELED (4).
+      // decidimos el nuevo estado dependiendo de la cantidad de jugadores en la sala para ver si el duelo
+      // pasa a ser cancelado inmediatamente o pasa a estado verificando
+      const nextState = duelGame.playersJoined === 1 ? 4 : 5;
+
+      let allowedState: number;
+      (duelGame.playersJoined === 1) ? allowedState = 1 : allowedState = 2;
+
+      // IMPORANTE: aqui se produce directamente la actualizacion y guardado del dato al instante
+      // update atomico del DuelGame
+      // 1️⃣ Update condicional atómico
+      const updateResult = await manager
+        .createQueryBuilder()
+        .update(DuelGame)
+        // set: actualiza a (los campos typeState y duelDateFinished)
+        .set({
+          typeState: { id: nextState },
+          duelDateFinished: nextState === 4 ? new Date() : null,
+          cancelReason
+        })
+        .where('id = :duelId', { duelId })
+        // solo si el typeStateId es
+        .andWhere('typeStateId = :allowedState', { allowedState })
+        .execute();
+
+      // 2️⃣ Si no afectó filas → ya no estaba en VERIFYING
+      if (updateResult.affected === 0) throw new BadRequestException('El duelo ya no está en estado válido para cancelación.');
+
+      const finishedAt: Date = new Date();
+
+      // update atomico del UserDuelGame
+      await manager
+        .createQueryBuilder()
+        .update(UserDuelGame)
+        .set({
+          finishedAt: finishedAt,
+          result: nextState === 4 ? DuelResult.CANCELED : DuelResult.VERIFYING
+        })
+        .where('duelGameId = :duelId', { duelId })
+        .execute();
+
+      return { ok: true, message: 'Duelo en proceso de cancelación. Se debe realizar la confirmación.' };
+    });
   }
 
 }
