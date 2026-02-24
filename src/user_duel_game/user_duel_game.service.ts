@@ -40,12 +40,18 @@ export class UserDuelGameService {
 
       // 🔒 lock pesimista
       // primero verificar que realmente exista la sala del duelo
-      const duelGame = await manager.createQueryBuilder(DuelGame, 'duel')
+      const duelGame = await manager
+        .createQueryBuilder(DuelGame, 'duel')
+        .leftJoinAndSelect('duel.typeState', 'typeState')
         .where('duel.id = :id', { id })
-        .setLock('pessimistic_write')  // FOR UPDATE
+        .setLock('pessimistic_write', undefined, ['duel'])  // FOR UPDATE
         .getOne();
 
       if (!duelGame) throw new NotFoundException('La sala del duelo al cual esta accediendo no existe.');
+      // validacion del duelo ya cancelado
+      if (duelGame.typeState.id === 4) throw new BadRequestException('No es posible unirse al duelo, este se encuentra cancelado.');
+      // validacion de un duelo en "proceso de cancelacion"
+      if (duelGame.typeState.id === 5) throw new BadRequestException('No es posible unirse a un duelo en proceso de cancelación.');
 
       // ❌ sala llena
       if (duelGame.playersJoined >= duelGame.playersNumber)
