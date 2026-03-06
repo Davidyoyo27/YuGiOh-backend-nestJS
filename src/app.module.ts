@@ -10,6 +10,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { DuelGameModule } from './duel_game/duel_game.module';
 import { UserDuelGameModule } from './user_duel_game/user_duel_game.module';
+import { PlayerStatisticsModule } from './player_statistics/player_statistics.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { UserDuelGameModule } from './user_duel_game/user_duel_game.module';
     GameProfileModule,
     DuelGameModule,
     UserDuelGameModule,
+    PlayerStatisticsModule,
   ],
 })
 export class AppModule {}
