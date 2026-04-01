@@ -29,4 +29,14 @@ export class PlayerStatisticsRepository {
         return result[0];
     }
 
+    // llamada al SP/funcion en la BD
+    async getAllPlayers() {
+
+        return await this.dataSource
+            .createQueryBuilder()
+            .select('*')
+            .from('(SELECT * FROM getAllPlayers())', 'players')
+            .getRawMany();
+    }
+
 }

@@ -62,7 +62,6 @@ export class DuelGame {
 
     @Column({
         type: 'text',
-        unique: true,
         nullable: false
     })
     roomName: string;
@@ -75,5 +74,17 @@ export class DuelGame {
         nullable: true
     })
     cancelReason: string;
+
+    @Column({
+        type: 'bool',
+        default: false
+    })
+    isManual: boolean;
+
+    @Column({
+        type: 'text',
+        nullable: true
+    })
+    manualBatchId: string;
 
 }
