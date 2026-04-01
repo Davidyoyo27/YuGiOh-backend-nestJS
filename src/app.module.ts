@@ -11,6 +11,7 @@ import { join } from 'path';
 import { DuelGameModule } from './duel_game/duel_game.module';
 import { UserDuelGameModule } from './user_duel_game/user_duel_game.module';
 import { PlayerStatisticsModule } from './player_statistics/player_statistics.module';
+import { AuditModule } from './audit/audit.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { PlayerStatisticsModule } from './player_statistics/player_statistics.mo
     DuelGameModule,
     UserDuelGameModule,
     PlayerStatisticsModule,
+    AuditModule,
   ],
 })
 export class AppModule {}

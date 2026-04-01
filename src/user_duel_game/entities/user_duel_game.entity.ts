@@ -55,4 +55,10 @@ export class UserDuelGame {
     })
     finishedAt: Date | null;
 
+    @Column({
+        type: 'text',
+        nullable: true
+    })
+    manualBatchId: string;
+
 }

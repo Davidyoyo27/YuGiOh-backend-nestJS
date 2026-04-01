@@ -4,6 +4,7 @@ import { TokenReset } from "./token-reset.entity";
 import { UserSessions } from "src/auth/entities/user-sessions.entity";
 import { LoginAttempts } from "src/auth/entities/login-attempts.entity";
 import { GameProfile } from "src/game_profile/entities/game-profile.entity";
+import { PlayerStatsAudit } from "src/audit/entities/player-stats-audit.entity";
 
 @Entity()
 export class User {
@@ -89,5 +90,11 @@ export class User {
         (profile) => profile.user,
     )
     gameProfile: GameProfile;
+
+    @OneToMany(
+        () => PlayerStatsAudit,
+        (auditStatsPlayer) => auditStatsPlayer.performedBy
+    )
+    playerStatsAudit: PlayerStatsAudit;
 
 }
