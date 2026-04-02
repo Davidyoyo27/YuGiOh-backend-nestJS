@@ -33,7 +33,7 @@ export class AdminService {
           'user.name',
           'user.lastName',
           'user.isActive',
-          'typeUser.type_name'
+          'typeUser.typeName'
         ])
         .where('user.typeUserId = :id', { id: 2 })
         .getMany();

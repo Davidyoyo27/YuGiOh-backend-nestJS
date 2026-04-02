@@ -11,7 +11,7 @@ export class UserType {
         type: 'text',
         unique: true
     })
-    type_name: string;
+    typeName: string;
 
     // relacion
     @OneToMany(

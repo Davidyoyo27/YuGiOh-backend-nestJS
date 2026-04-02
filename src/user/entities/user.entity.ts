@@ -55,7 +55,7 @@ export class User {
     isActive: boolean;
 
     @CreateDateColumn()
-    date_created: Date;
+    dateCreated: Date;
 
     // relacion
     @ManyToOne(
