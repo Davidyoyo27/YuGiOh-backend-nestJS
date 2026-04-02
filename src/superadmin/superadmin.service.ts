@@ -146,7 +146,7 @@ export class SuperadminService {
           'user.name',
           'user.lastName',
           'user.isActive',
-          'typeUser.type_name',
+          'typeUser.typeName',
         ])
         .where('user.typeUserId IN (:...id)', { id: finalIds })
         .getMany();
