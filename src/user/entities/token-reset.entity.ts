@@ -7,21 +7,21 @@ import { User } from "./user.entity";
 export class TokenReset {
 
     @PrimaryGeneratedColumn()
-    id: number;
+    id!: number;
 
     @Index() // mejora busqueda por token
     @Column({
         type: 'text',
         unique: true,
     })
-    token: string;
+    token!: string;
 
     @Column({
         type: 'timestamp',
         precision: 6,
         nullable: false,
     })
-    expirationToken: Date;
+    expirationToken!: Date;
 
     // relacion
     @ManyToOne(
@@ -35,6 +35,6 @@ export class TokenReset {
             eager: false,
         }
     )
-    user: User;
+    user!: User;
 
 }

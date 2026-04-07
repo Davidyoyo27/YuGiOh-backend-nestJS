@@ -6,52 +6,52 @@ import { User } from "src/user/entities/user.entity";
 export class PlayerStatsAudit {
 
     @PrimaryGeneratedColumn()
-    id: number;
+    id!: number;
 
     @Column({
         type: 'int',
     })
-    profileId: number;
+    profileId!: number;
 
     // (ADD_WIN, REMOVE_WIN, ADD_LOSE, etc)
     @Column({
         type: 'enum',
         enum: ManualAction,
     })
-    action: ManualAction;
+    action!: ManualAction;
 
     @Column({
         type: 'int',
     })
-    amount: number;
+    amount!: number;
 
     @Column({
         type: 'int',
     })
-    oldValue: number;
+    oldValue!: number;
 
     @Column({
         type: 'int',
     })
-    newValue: number;
+    newValue!: number;
 
     @Column({
         type: 'varchar',
         length: 100,
         nullable: false,
     })
-    reason: string;
+    reason!: string;
 
     @ManyToOne(
         () => User,
         (byPerformed) => byPerformed.playerStatsAudit
     )
-    performedBy: User;
+    performedBy!: User;
 
     // asignacion de fecha y hora para auditorias, logs, etc.
     @CreateDateColumn({
         type: 'timestamptz'
     })
-    createdAt: Date;
+    createdAt!: Date;
 
 }

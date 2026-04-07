@@ -5,24 +5,24 @@ import { User } from "src/user/entities/user.entity";
 export class LoginAttempts {
 
     @PrimaryGeneratedColumn()
-    id: number;
+    id!: number;
 
     @Column({
         type: 'int',
     })
-    attempts: number;
+    attempts!: number;
 
     @Column({
         type: 'timestamp', 
         nullable: true
     })
-    lastAttemptAt: Date | null;
+    lastAttemptAt!: Date | null;
 
     @Column({
         type: 'timestamp',
         nullable: true
     })
-    lockedUntil: Date | null;
+    lockedUntil!: Date | null;
 
     // relacion
     @ManyToOne(
@@ -30,6 +30,6 @@ export class LoginAttempts {
         (user) => user.userLogin,
         { onDelete: 'CASCADE' }
     )
-    user: User;
+    user!: User;
 
 }

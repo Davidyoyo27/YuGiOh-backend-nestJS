@@ -10,7 +10,7 @@ import { Column, CreateDateColumn, Entity, JoinColumn,
 export class GameProfile {
 
     @PrimaryGeneratedColumn()
-    id: number;
+    id!: number;
 
     @Column({
         type: 'text',
@@ -26,7 +26,7 @@ export class GameProfile {
     avatarImage?: string;
 
     @CreateDateColumn()
-    createdAt: Date;
+    createdAt!: Date;
 
     // con @UpdateDateColumn se dispara de manera automatica
     //  cuando se realiza un .save() o un .update()
@@ -43,18 +43,18 @@ export class GameProfile {
         { onDelete: 'CASCADE', eager: true }
     )
     @JoinColumn()  // OBLIGATORIO en relaciones 1:1, esto para que reconosca donde vive la clave foranea
-    user: User;
+    user!: User;
 
     @OneToMany(
         () => UserDuelGame,
         (userDuel) => userDuel.gameProfile,
     )
-    userDuelGameRelation: UserDuelGame[];
+    userDuelGameRelation!: UserDuelGame[];
 
     @OneToMany(
         () => DuelGame,
         (duelGame) => duelGame.createdBy,
     )
-    createdDuelGameRelation: DuelGame[];
+    createdDuelGameRelation!: DuelGame[];
 
 }

@@ -10,7 +10,7 @@ import { DuelResult } from "src/common/utils/duel-result";
 export class UserDuelGame {
 
     @PrimaryGeneratedColumn()
-    id: number;
+    id!: number;
 
     // relacion
     // id_duel_game = ID del juego mismo, de los puntos de vida
@@ -19,7 +19,7 @@ export class UserDuelGame {
         (gameDuel) => gameDuel.userDuelGame,
         { onDelete: 'CASCADE' }
     )
-    duelGame: DuelGame;
+    duelGame!: DuelGame;
 
     // id_game_profile = ID de el perfil del usuario, osea el jugador
     @ManyToOne(
@@ -27,38 +27,38 @@ export class UserDuelGame {
         (profileGame) => profileGame.userDuelGameRelation,
         { onDelete: 'CASCADE' }
     )
-    gameProfile: GameProfile;
+    gameProfile!: GameProfile;
 
     @Column({
         type: 'enum',
         enum: DuelResult,
         nullable: true,
     })
-    result: DuelResult | null;
+    result!: DuelResult | null;
 
     @Column({
         type: 'int',
         nullable: true
     })
-    finalLP: number | null;
+    finalLP!: number | null;
 
     @Column({
         type: 'timestamp',
         precision: 6,
     })
-    createdAt: Date;
+    createdAt!: Date;
 
     @Column({
         type: 'timestamp',
         precision: 6,
         nullable: true
     })
-    finishedAt: Date | null;
+    finishedAt!: Date | null;
 
     @Column({
         type: 'text',
         nullable: true
     })
-    manualBatchId: string;
+    manualBatchId!: string;
 
 }

@@ -5,41 +5,41 @@ import { User } from "src/user/entities/user.entity";
 export class UserSessions {
 
     @PrimaryGeneratedColumn()
-    id: number;
+    id!: number;
 
     @Column({
         type: 'text',
         nullable: true,
     })
-    hashedRT: string | null;
+    hashedRT!: string | null;
 
     @Column({
         type: 'int',
         default: 0
     })
-    tokenVersion: number;
+    tokenVersion!: number;
 
     @Column({
         type: 'text',
         nullable: true,
     })
-    ipAddress: string;
+    ipAddress!: string;
 
     @Column({
         type: 'text',
         nullable: true,
     })
-    userAgent: string;
+    userAgent!: string;
 
     @CreateDateColumn()
-    createdAt: Date;
+    createdAt!: Date;
 
     @Column({
         type: 'timestamp',
         precision: 6,
         nullable: true,
     })
-    expiresAt: Date;
+    expiresAt!: Date;
 
     // última vez que el usuario utilizó esa sesión para hacer una petición autenticada.
     @Column({
@@ -47,13 +47,13 @@ export class UserSessions {
         precision: 6,
         nullable: true,
     })
-    lastUsedAt: Date;
+    lastUsedAt!: Date;
 
     @Column({
         type: 'bool',
         default: true,
     })
-    status: boolean;
+    status!: boolean;
 
     // relacion
     @ManyToOne(
@@ -61,6 +61,6 @@ export class UserSessions {
         (user) => user.userSession,
         { onDelete: 'CASCADE' },
     )
-    user: User;
+    user!: User;
 
 }

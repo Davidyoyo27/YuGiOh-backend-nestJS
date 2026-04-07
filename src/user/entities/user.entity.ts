@@ -10,28 +10,28 @@ import { PlayerStatsAudit } from "src/audit/entities/player-stats-audit.entity";
 export class User {
 
     @PrimaryGeneratedColumn('uuid')
-    id: string;
+    id!: string;
 
     @Column({
         type: 'text',
         unique: true
     })
-    email: string;
+    email!: string;
 
     @Column({
         type: 'text',
         select: false,
     })
-    password: string;
+    password!: string;
 
     @Column('text')
-    name: string;
+    name!: string;
 
     @Column({
         type: 'text',
         nullable: true,
     })
-    lastName: string | null;
+    lastName!: string | null;
 
     @Column({
         type: 'text',
@@ -52,10 +52,10 @@ export class User {
         type: 'bool',
         default: false
     })
-    isActive: boolean;
+    isActive!: boolean;
 
     @CreateDateColumn()
-    dateCreated: Date;
+    dateCreated!: Date;
 
     // relacion
     @ManyToOne(
@@ -63,38 +63,38 @@ export class User {
         (userType) => userType.userRelation,
         { cascade: true, eager: true }
     )
-    typeUser: UserType;
+    typeUser!: UserType;
 
     @OneToMany(
         () => TokenReset,
         (resetToken) => resetToken.user,
         { cascade: true, eager: true }
     )
-    tokenReset: TokenReset;
+    tokenReset!: TokenReset;
 
     @OneToMany(
         () => UserSessions,
         (session) => session.user 
     )
-    userSession: UserSessions;
+    userSession!: UserSessions;
 
     @OneToMany(
         () => LoginAttempts,
         (loginUser) => loginUser.user
     )
-    userLogin: LoginAttempts;
+    userLogin!: LoginAttempts;
 
     // solo referencia logica a la relacion uno a uno
     @OneToOne(
         () => GameProfile,
         (profile) => profile.user,
     )
-    gameProfile: GameProfile;
+    gameProfile!: GameProfile;
 
     @OneToMany(
         () => PlayerStatsAudit,
         (auditStatsPlayer) => auditStatsPlayer.performedBy
     )
-    playerStatsAudit: PlayerStatsAudit;
+    playerStatsAudit!: PlayerStatsAudit;
 
 }

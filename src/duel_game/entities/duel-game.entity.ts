@@ -8,29 +8,29 @@ import { GameProfile } from "src/game_profile/entities/game-profile.entity";
 export class DuelGame {
 
     @PrimaryGeneratedColumn()
-    id: number;
+    id!: number;
 
     @Column({
         type: 'int',
         default: 2
     })
-    playersNumber: number;
+    playersNumber!: number;
 
     @Column({
         type: 'int',
         default: 0
     })
-    playersJoined: number;
+    playersJoined!: number;
 
     @CreateDateColumn()
-    duelDateCreated: Date;
+    duelDateCreated!: Date;
 
     @Column({
         type: 'timestamp',
         precision: 6,
         nullable: true
     })
-    duelDateFinished: Date | null;
+    duelDateFinished!: Date | null;
 
     // relacion
     @ManyToOne(
@@ -38,33 +38,33 @@ export class DuelGame {
         (duelType) => duelType.duelGameRelation,
         { cascade: true, eager: true }
     )
-    typeDuel: DuelType;
+    typeDuel!: DuelType;
 
     @ManyToOne(
         () => DuelState,
         (duelState) => duelState.duelStateRelation,
         { cascade: true, eager: true }
     )
-    typeState: DuelState;
+    typeState!: DuelState;
 
     @OneToMany(
         () => UserDuelGame,
         (userGameDuel) => userGameDuel.duelGame
     )
-    userDuelGame: UserDuelGame[];
+    userDuelGame!: UserDuelGame[];
 
     @ManyToOne(
         () => GameProfile,
         (byCreated) => byCreated.createdDuelGameRelation,
         { cascade: true, eager: true }
     )
-    createdBy: GameProfile;
+    createdBy!: GameProfile;
 
     @Column({
         type: 'text',
         nullable: false
     })
-    roomName: string;
+    roomName!: string;
 
     @Column({
         // se utiliza varchar ya que se especifica 
@@ -73,18 +73,18 @@ export class DuelGame {
         length: 200,
         nullable: true
     })
-    cancelReason: string;
+    cancelReason!: string;
 
     @Column({
         type: 'bool',
         default: false
     })
-    isManual: boolean;
+    isManual!: boolean;
 
     @Column({
         type: 'text',
         nullable: true
     })
-    manualBatchId: string;
+    manualBatchId!: string;
 
 }
