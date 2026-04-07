@@ -5,19 +5,19 @@ import { DuelGame } from "./duel-game.entity";
 export class DuelState {
 
     @PrimaryGeneratedColumn()
-    id: number;
+    id!: number;
 
     @Column({
         type: 'text',
         unique: true
     })
-    stateName: string;
+    stateName!: string;
 
     // relacion
     @OneToMany(
         () => DuelGame,
         (duelGame) => duelGame.typeState
     )
-    duelStateRelation: DuelGame;
+    duelStateRelation!: DuelGame;
     
 }

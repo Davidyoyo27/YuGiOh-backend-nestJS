@@ -5,19 +5,19 @@ import { User } from "./user.entity";
 export class UserType {
 
     @PrimaryGeneratedColumn()
-    id: number;
+    id!: number;
 
     @Column({
         type: 'text',
         unique: true
     })
-    typeName: string;
+    typeName!: string;
 
     // relacion
     @OneToMany(
         () => User,
         (user) => user.typeUser
     )
-    userRelation: User;
+    userRelation!: User;
 
 }

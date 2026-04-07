@@ -4,25 +4,25 @@ import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from "typeor
 export class IpRateLimit {
 
     @PrimaryGeneratedColumn()
-    id: number;
+    id!: number;
 
     @Column({
         type: 'varchar',
         length: 45,
         unique: true
     })
-    ip: string;
+    ip!: string;
 
     @Column({
         default: 0
     })
-    attempts: number;
+    attempts!: number;
 
     @Column({
         type: 'int',
         default: 0
     })
-    lockLevel: number;
+    lockLevel!: number;
 
     // esta fecha es manual, no puede ser automatica 
     // puesto que representa un evento de negocio
@@ -31,16 +31,16 @@ export class IpRateLimit {
         precision: 6,
         nullable: true
     })
-    lastAttemptAt: Date | null;
+    lastAttemptAt!: Date | null;
 
     @Column({
         type: 'timestamp',
         precision: 6,
         nullable: true
     })
-    lockedUntil: Date | null;
+    lockedUntil!: Date | null;
 
     @CreateDateColumn()
-    createdAt: Date;
+    createdAt!: Date;
 
 }
