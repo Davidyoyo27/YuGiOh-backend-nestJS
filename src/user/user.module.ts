@@ -3,11 +3,11 @@ import { UserService } from './user.service';
 import { UserController } from './user.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { User } from './entities/user.entity';
-import { UserType } from './entities/user-type.entity';
-import { TokenReset } from './entities/token-reset.entity';
-import { LoginAttempts } from 'src/auth/entities/login-attempts.entity';
-import { GameProfile } from 'src/game_profile/entities/game-profile.entity';
+import { User } from '../user/entities/user.entity';
+import { UserType } from '../user/entities/user-type.entity';
+import { TokenReset } from '../user/entities/token-reset.entity';
+import { LoginAttempts } from '../auth/entities/login-attempts.entity';
+import { GameProfile } from '../game_profile/entities/game-profile.entity';
 
 import { PassportModule } from '@nestjs/passport';
 import { IsEmailUniqueConstraint } from './decorators/validators/is-email-unique.validator';

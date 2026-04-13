@@ -7,7 +7,7 @@ import {
     ValidatorConstraintInterface,
     ValidationArguments,
 } from 'class-validator';
-import { User } from 'src/user/entities/user.entity';
+import { User } from '../../entities/user.entity';
 import { Repository } from 'typeorm';
 
 

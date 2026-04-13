@@ -7,7 +7,7 @@ import {
     ValidatorConstraintInterface,
     ValidationArguments,
 } from 'class-validator';
-import { GameProfile } from 'src/game_profile/entities/game-profile.entity';
+import { GameProfile } from '../../entities/game-profile.entity';
 import { Repository } from 'typeorm';
 
 

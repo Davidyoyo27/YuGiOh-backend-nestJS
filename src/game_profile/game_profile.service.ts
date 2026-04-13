@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { GameProfile } from './entities/game-profile.entity';
+import { GameProfile } from '../game_profile/entities/game-profile.entity';
 
 import { CreateGameProfileDto } from './dto/create-game_profile.dto';
 import { UpdateGameProfileDto } from './dto/update-game_profile.dto';

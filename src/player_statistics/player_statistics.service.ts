@@ -2,10 +2,10 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { DataSource, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { DuelGame } from 'src/duel_game/entities/duel-game.entity';
-import { UserDuelGame } from 'src/user_duel_game/entities/user_duel_game.entity';
-import { GameProfile } from 'src/game_profile/entities/game-profile.entity';
-import { PlayerStatsAudit } from 'src/audit/entities/player-stats-audit.entity';
+import { DuelGame } from '../duel_game/entities/duel-game.entity';
+import { UserDuelGame } from '../user_duel_game/entities/user_duel_game.entity';
+import { GameProfile } from '../game_profile/entities/game-profile.entity';
+import { PlayerStatsAudit } from '../audit/entities/player-stats-audit.entity';
 
 import { GetAllPlayersResponseDto } from './dto/all-players-response.dto';
 import { AddStatisticsPlayerDto } from './dto/add-statistics-player.dto';

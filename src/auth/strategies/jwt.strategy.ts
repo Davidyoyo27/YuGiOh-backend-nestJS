@@ -5,8 +5,8 @@ import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
-import { User } from "src/user/entities/user.entity";
-import { UserSessions } from "../entities/user-sessions.entity";
+import { User } from '../../user/entities/user.entity';
+import { UserSessions } from '../../auth/entities/user-sessions.entity';
 
 import { JwtPayload } from "../interfaces/jwt-payload.interfaces";
 
@@ -27,8 +27,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
         });
     }
-    
-    async validate(payload: JwtPayload){
+
+    async validate(payload: JwtPayload) {
 
         const { identifier, sessionId } = payload;
 
@@ -37,8 +37,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             relations: ['typeUser', 'gameProfile'],
         });
 
-        if(!user) throw new UnauthorizedException('Token invalido.');
-        if(!user.isActive) 
+        if (!user) throw new UnauthorizedException('Token invalido.');
+        if (!user.isActive)
             throw new UnauthorizedException('Usuario inactivo, favor comunicarse con un administrador.');
 
         // la variable puede ser de tipo string o number, si el usuario no tiene creado un perfil se le asigna

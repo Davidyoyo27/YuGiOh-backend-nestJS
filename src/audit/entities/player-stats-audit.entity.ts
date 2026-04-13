@@ -1,6 +1,6 @@
 import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
-import { ManualAction } from "src/common/utils/update-stats-manual-action";
-import { User } from "src/user/entities/user.entity";
+import { ManualAction } from '../../common/utils/update-stats-manual-action';
+import { User } from '../../user/entities/user.entity';
 
 @Entity()
 export class PlayerStatsAudit {

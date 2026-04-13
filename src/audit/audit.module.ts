@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { AuditService } from './audit.service';
 import { AuditController } from './audit.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { PlayerStatsAudit } from './entities/player-stats-audit.entity';
+import { PlayerStatsAudit } from '../audit/entities/player-stats-audit.entity';
 
 @Module({
   controllers: [AuditController],

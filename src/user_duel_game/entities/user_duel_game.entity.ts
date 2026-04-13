@@ -2,9 +2,9 @@ import {
     Column, Entity, ManyToOne,
     PrimaryGeneratedColumn
 } from "typeorm";
-import { DuelGame } from "src/duel_game/entities/duel-game.entity";
-import { GameProfile } from "src/game_profile/entities/game-profile.entity";
-import { DuelResult } from "src/common/utils/duel-result";
+import { DuelGame } from '../../duel_game/entities/duel-game.entity';
+import { GameProfile } from '../../game_profile/entities/game-profile.entity';
+import { DuelResult } from '../../common/utils/duel-result';
 
 @Entity()
 export class UserDuelGame {

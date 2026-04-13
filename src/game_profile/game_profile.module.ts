@@ -3,7 +3,7 @@ import { GameProfileService } from './game_profile.service';
 import { GameProfileController } from './game_profile.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PassportModule } from '@nestjs/passport';
-import { GameProfile } from './entities/game-profile.entity';
+import { GameProfile } from '../game_profile/entities/game-profile.entity';
 import { LocalStorageModule } from 'src/files/storage/local-storage.module';
 
 @Module({

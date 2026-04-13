@@ -1,5 +1,5 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
-import { DuelGame } from "./duel-game.entity";
+import { DuelGame } from '../entities/duel-game.entity';
 
 @Entity()
 export class DuelType {

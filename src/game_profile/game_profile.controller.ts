@@ -7,6 +7,8 @@ import { UpdateGameProfileDto } from './dto/update-game_profile.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUserId } from 'src/common/decorators/current-user-id.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
+// NO BORRAR: aunque no se use si se quita dara error en Express.Multer.File
+import { Multer } from 'multer';
 
 // DATO: aunque en la carpeta diga game_profile (guion bajo) el que manda es el nombre que sale aca, osea game-profile (guion medio)
 @Controller('game-profile')
@@ -51,7 +53,7 @@ export class GameProfileController {
   )
   uploadAvatarImage(
     //                            npm install -D @types/multer
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: Express.Multer.File | any,
     @CurrentUserId('id') userId: string
   ) {
     return this.gameProfileService.uploadAvatarImage(userId, file);

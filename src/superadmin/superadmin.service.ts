@@ -2,11 +2,11 @@ import { BadRequestException, ConflictException, Injectable, InternalServerError
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { User } from 'src/user/entities/user.entity';
-import { UserType } from 'src/user/entities/user-type.entity';
-import { UserSessions } from 'src/auth/entities/user-sessions.entity';
-import { LoginAttempts } from 'src/auth/entities/login-attempts.entity';
-import { IpRateLimit } from 'src/auth/entities/login-ip-rate-limit.entity';
+import { User } from '../user/entities/user.entity';
+import { UserType } from '../user/entities/user-type.entity';
+import { UserSessions } from '../auth/entities/user-sessions.entity';
+import { LoginAttempts } from '../auth/entities/login-attempts.entity';
+import { IpRateLimit } from '../auth/entities/login-ip-rate-limit.entity';
 
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { UpdateUserDto } from 'src/user/dto/update-user.dto';
