@@ -5,12 +5,12 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { User } from 'src/user/entities/user.entity';
-import { UserType } from 'src/user/entities/user-type.entity';
-import { TokenReset } from 'src/user/entities/token-reset.entity';
-import { UserSessions } from './entities/user-sessions.entity';
-import { LoginAttempts } from './entities/login-attempts.entity';
-import { IpRateLimit } from './entities/login-ip-rate-limit.entity';
+import { User } from '../user/entities/user.entity';
+import { UserType } from '../user/entities/user-type.entity';
+import { TokenReset } from '../user/entities/token-reset.entity';
+import { UserSessions } from '../auth/entities/user-sessions.entity';
+import { LoginAttempts } from '../auth/entities/login-attempts.entity';
+import { IpRateLimit } from '../auth/entities/login-ip-rate-limit.entity';
 
 import { UserModule } from 'src/user/user.module';
 import { EmailModule } from 'src/email/email.module';

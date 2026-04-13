@@ -1,5 +1,5 @@
 import { Column, Entity, Index, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
-import { User } from "./user.entity";
+import { User } from "../entities/user.entity";
 
 // tabla que almacena los tokens para realizar los cambios 
 // de contraseñas de las cuentas de los usuarios

@@ -1,8 +1,8 @@
 import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
-import { DuelState } from "./duel-state.entity";
-import { DuelType } from "./duel-type.entity";
-import { UserDuelGame } from "src/user_duel_game/entities/user_duel_game.entity";
-import { GameProfile } from "src/game_profile/entities/game-profile.entity";
+import { DuelState } from '../entities/duel-state.entity';
+import { DuelType } from '../entities/duel-type.entity';
+import { UserDuelGame } from '../../user_duel_game/entities/user_duel_game.entity';
+import { GameProfile } from '../../game_profile/entities/game-profile.entity';
 
 @Entity()
 export class DuelGame {

@@ -3,11 +3,11 @@ import { Injectable } from '@nestjs/common';
 import { Repository, Raw } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { User } from 'src/user/entities/user.entity';
-import { TokenReset } from 'src/user/entities/token-reset.entity';
-import { UserSessions } from './entities/user-sessions.entity';
-import { LoginAttempts } from './entities/login-attempts.entity';
-import { IpRateLimit } from './entities/login-ip-rate-limit.entity';
+import { User } from '../user/entities/user.entity';
+import { TokenReset } from '../user/entities/token-reset.entity';
+import { UserSessions } from '../auth/entities/user-sessions.entity';
+import { LoginAttempts } from '../auth/entities/login-attempts.entity';
+import { IpRateLimit } from '../auth/entities/login-ip-rate-limit.entity';
 
 import { LoginUserDto } from './dto/login-user.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';

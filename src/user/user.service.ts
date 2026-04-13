@@ -6,8 +6,8 @@ import {
 import { ILike, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { User } from './entities/user.entity';
-import { UserType } from './entities/user-type.entity';
+import { User } from '../user/entities/user.entity';
+import { UserType } from '../user/entities/user-type.entity';
 
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';

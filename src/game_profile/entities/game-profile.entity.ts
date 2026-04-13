@@ -1,10 +1,9 @@
-import { DuelGame } from "src/duel_game/entities/duel-game.entity";
-import { User } from "src/user/entities/user.entity";
-import { UserDuelGame } from "src/user_duel_game/entities/user_duel_game.entity";
 import { Column, CreateDateColumn, Entity, JoinColumn, 
-    OneToMany, 
-    OneToOne, PrimaryGeneratedColumn, UpdateDateColumn 
+    OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn 
 } from "typeorm";
+import { DuelGame } from '../../duel_game/entities/duel-game.entity';
+import { User } from '../../user/entities/user.entity';
+import { UserDuelGame } from '../../user_duel_game/entities/user_duel_game.entity';
 
 @Entity()
 export class GameProfile {

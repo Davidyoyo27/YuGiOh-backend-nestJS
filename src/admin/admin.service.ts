@@ -3,7 +3,7 @@ import {
   InternalServerErrorException, Logger, NotFoundException
 } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { User } from 'src/user/entities/user.entity';
+import { User } from '../user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { generateActivationCode, generateTimeExpirationInMinutes } from 'src/common/utils/functions';
 import { EmailService } from '../email/email.service';

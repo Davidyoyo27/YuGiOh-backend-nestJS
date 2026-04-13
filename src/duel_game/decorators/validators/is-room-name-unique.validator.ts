@@ -7,7 +7,7 @@ import {
     ValidatorConstraintInterface,
     ValidationArguments,
 } from 'class-validator';
-import { DuelGame } from 'src/duel_game/entities/duel-game.entity';
+import { DuelGame } from '../../entities/duel-game.entity';
 import { Repository } from 'typeorm';
 
 

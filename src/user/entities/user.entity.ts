@@ -1,10 +1,10 @@
 import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
-import { UserType } from "./user-type.entity";
-import { TokenReset } from "./token-reset.entity";
-import { UserSessions } from "src/auth/entities/user-sessions.entity";
-import { LoginAttempts } from "src/auth/entities/login-attempts.entity";
-import { GameProfile } from "src/game_profile/entities/game-profile.entity";
-import { PlayerStatsAudit } from "src/audit/entities/player-stats-audit.entity";
+import { UserType } from '../entities/user-type.entity';
+import { TokenReset } from '../entities/token-reset.entity';
+import { UserSessions } from '../../auth/entities/user-sessions.entity';
+import { LoginAttempts } from '../../auth/entities/login-attempts.entity';
+import { GameProfile } from '../../game_profile/entities/game-profile.entity';
+import { PlayerStatsAudit } from '../../audit/entities/player-stats-audit.entity';
 
 @Entity()
 export class User {
