@@ -29,7 +29,7 @@ export class UserController {
 
   @UseGuards( AuthGuard(), RolesGuard )
   @Roles(2)
-  @Get()
+  @Get('get-all-duelist-users')
   findAll() {
     return this.userService.findAll();
   }

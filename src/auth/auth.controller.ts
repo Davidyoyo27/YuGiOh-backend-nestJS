@@ -1,12 +1,14 @@
-import { Controller, Post, Body, Get, Param, Patch, Req, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Patch, Req, UseGuards, Res } from '@nestjs/common';
 import { LoginUserDto } from './dto/login-user.dto';
 import { AuthService } from './auth.service';
 import { EmailResetPasswordDto } from './dto/email-reset-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { UuidValidationPipe } from 'src/common/pipes/uuid-validation.pipe';
 import { getClientData } from 'src/common/utils/functions';
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentSessionId } from './decorators/current-session-id.decorator';
+import type { Request, Response } from 'express';
+import { RolesGuard } from './guards/roles.guard';
+import { CurrentUserId } from 'src/common/decorators/current-user-id.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -17,17 +19,21 @@ export class AuthController {
   @Post('login')
   loginUser(
     @Body() loginUserDto: LoginUserDto,
+    @Res({ passthrough: true }) res: Response,
     @Req() req: any
   ) {
     const reqData = getClientData(req);
 
-    return this.authService.login(loginUserDto, reqData);
+    return this.authService.login(loginUserDto, reqData, res);
   }
 
-  @UseGuards( AuthGuard() )
+  @UseGuards(AuthGuard())
   @Post('logout')
-  logoutUser(@CurrentSessionId() sessionId: number){
-    return this.authService.logout(sessionId);
+  logoutUser(
+    @CurrentSessionId() sessionId: number,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.authService.logout(sessionId, res);
   }
 
   // ingresas tu correo para solicitar el cambio de contraseña
@@ -50,9 +56,25 @@ export class AuthController {
 
   @Post('refresh')
   async refreshToken(
-    @Body('refreshToken') refreshToken: string,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
   ) {
-    return this.authService.refreshTokens(refreshToken);
+    return this.authService.refreshTokens(req, res);
+  }
+
+  // sirve para:
+  // -verificar si existe una sesión válida.
+  // -recuperar la sesión después de F5.
+  // -recuperar la sesión después de cerrar y abrir la pestaña.
+  // -inicializar el AuthStore.
+  // -decidir si mostrar Login o Home.
+  // -alimentar los Guards.
+  @Get('check-auth')
+  @UseGuards(AuthGuard(), RolesGuard)
+  checkAuth(
+    @CurrentUserId('id') userId: string,
+  ) {
+    return this.authService.checkAuth(userId);
   }
 
 }

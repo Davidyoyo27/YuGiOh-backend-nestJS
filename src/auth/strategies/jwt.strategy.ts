@@ -9,6 +9,7 @@ import { User } from '../../user/entities/user.entity';
 import { UserSessions } from '../../auth/entities/user-sessions.entity';
 
 import { JwtPayload } from "../interfaces/jwt-payload.interfaces";
+import { Request } from "express";
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -22,9 +23,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
         configService: ConfigService,
     ) {
+
         super({
             secretOrKey: configService.get('JWT_ACCESS_SECRET') as string,
-            jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+            jwtFromRequest: ExtractJwt.fromExtractors([
+                // extrae el JWT desde la cookie
+                (req: Request) => {
+                    return req?.cookies?.access_token ?? null
+                },
+                // extrae el JWT desde el Bearer
+                ExtractJwt.fromAuthHeaderAsBearerToken(),
+            ]),
         });
     }
 

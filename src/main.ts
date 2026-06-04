@@ -2,12 +2,20 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { useContainer } from 'class-validator';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.setGlobalPrefix('api');
+  app.enableCors({
+    origin: 'http://localhost:4200',
+    credentials: true,
+  });
 
+  app.use(cookieParser());
+  
+  app.setGlobalPrefix('api');
+  
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -15,7 +23,7 @@ async function bootstrap() {
       transform: true,
     })
   );
-
+  
   // Linea de codigo agregada para que los decoradores personalizados 
   // agregados no arroje error al momento de usarlos
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
