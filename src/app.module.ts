@@ -12,10 +12,14 @@ import { DuelGameModule } from './duel_game/duel_game.module';
 import { UserDuelGameModule } from './user_duel_game/user_duel_game.module';
 import { PlayerStatisticsModule } from './player_statistics/player_statistics.module';
 import { AuditModule } from './audit/audit.module';
+import configuration from './config';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: configuration
+    }),
 
     TypeOrmModule.forRoot({
       type: 'postgres',

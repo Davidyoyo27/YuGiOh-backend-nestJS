@@ -1,7 +1,8 @@
 import { BadRequestException, ForbiddenException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { Injectable } from '@nestjs/common';
-import { Repository, Raw } from 'typeorm';
+import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Request, Response } from 'express';
 
 import { User } from '../user/entities/user.entity';
 import { TokenReset } from '../user/entities/token-reset.entity';
@@ -20,6 +21,7 @@ import {
 } from 'src/common/utils/functions';
 import { EmailService } from 'src/email/email.service';
 import { RequestMetaData } from './interfaces/request-meta-data.interfaces';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
@@ -43,9 +45,11 @@ export class AuthService {
         private readonly jwtService: JwtService,
 
         private readonly emailService: EmailService,
+
+        private readonly configService: ConfigService,
     ) { }
 
-    async login(loginUserDto: LoginUserDto, reqData: RequestMetaData) {
+    async login(loginUserDto: LoginUserDto, reqData: RequestMetaData, res: Response) {
 
         const { password, email } = loginUserDto;
         const { ip } = reqData;
@@ -99,13 +103,20 @@ export class AuthService {
         // guardamos el refreshToken en la BD
         await this.updateRefreshToken(userSession.id, tokens.refreshToken);
 
+        const accessToken = tokens.accessToken;
+        const refreshToken = tokens.refreshToken;
+
+        this.saveCookies(res, accessToken, refreshToken);
+
         return {
             ok: true,
             msg: 'Logeado con exito!',
-            tokens: {
-                accessToken: tokens.accessToken,
-                refreshToken: tokens.refreshToken
-            }
+            user: {
+                id: user.id,
+                userName: user.name,
+                email: user.email,
+                role: user.typeUser,
+            },
         }
     }
 
@@ -186,11 +197,11 @@ export class AuthService {
         const [accessToken, refreshToken] = await Promise.all([
             this.jwtService.signAsync(payload, {
                 secret: process.env.JWT_ACCESS_SECRET,
-                expiresIn: '15m', // 15 minutos
+                expiresIn: this.configService.getOrThrow<string>('jwt.accessExpires') as any,
             }),
             this.jwtService.signAsync(payload, {
                 secret: process.env.JWT_REFRESH_SECRET,
-                expiresIn: '1d', // un dia
+                expiresIn: this.configService.getOrThrow<string>('jwt.refreshExpires') as any,
             }),
         ]);
 
@@ -206,7 +217,9 @@ export class AuthService {
         );
     }
 
-    async refreshTokens(refreshToken: string) {
+    async refreshTokens(req: Request, res: Response) {
+
+        const refreshToken = req.cookies?.refresh_token;
 
         if (!refreshToken) throw new UnauthorizedException('Refresh token necesario.');
 
@@ -268,17 +281,29 @@ export class AuthService {
         // 6. guardar el nuevo refresh token con hash
         await this.updateRefreshToken(session.id, tokens.refreshToken, newTokenVersion);
 
-        return tokens;
+        // rescribimos ambas cookies por el proceso de volver a "refrescar el token"
+        this.saveCookies(res, tokens.accessToken, tokens.refreshToken);
+
+        return {
+            ok: true,
+            msg: "Token refrescado correctamente.",
+        };
     }
 
-    async logout(sessionId: number) {
+    async logout(sessionId: number, res: Response) {
 
         await this.userSessionRepository.update(
             { id: sessionId },
             { status: false, hashedRT: null }
         );
 
-        return { message: 'Sesión cerrada.' }
+        res.clearCookie('access_token');
+        res.clearCookie('refresh_token');
+
+        return {
+            ok: true,
+            message: 'Sesión cerrada.'
+        }
     }
 
     async createUserSession(userId: string, refreshToken: string | null, ip: string, userAgent: string, expiresAt: Date) {
@@ -306,25 +331,26 @@ export class AuthService {
         const sessions = await this.userSessionRepository.find({
             where: { user: { id: userId }, status: true },
             select: ['id', 'lastUsedAt', 'status'],
-            order: { lastUsedAt: 'DESC' }
+            order: { createdAt: 'DESC' }
         });
 
         if (sessions.length <= maxSessions) return;
 
-        // cantidad total de sesiones del usuario
-        const totalSessions = sessions.map(item => item.id);
-        // maximo de sesiones activas que SI deberia tener el usuario
-        const lastsSessions = totalSessions.slice(-3);
-        // sesiones viejas y que seran cerradas, no las nuevas
-        const sessionToClose = totalSessions.filter(item => !lastsSessions.includes(item));
+        const activeSessions = sessions
+            .slice(0, maxSessions)
+            .map(session => session.id);
 
-        if (sessionToClose.length === 0) return;
+        const sessionsToClose = sessions
+            .filter(session => !activeSessions.includes(session.id))
+            .map(session => session.id);
+
+        if (sessionsToClose.length === 0) return;
 
         await this.userSessionRepository
             .createQueryBuilder()
             .update(UserSessions)
             .set({ status: false })
-            .where('id IN (:...id)', { id: sessionToClose })
+            .where('id IN (:...id)', { id: sessionsToClose })
             .execute();
 
     }
@@ -542,6 +568,55 @@ export class AuthService {
             { ip },
             { attempts: 0, lockedUntil: null, lastAttemptAt: new Date() }
         );
+    }
+
+    // comprueba en el front el usuario que esta en la sesion
+    async checkAuth(userId: string) {
+
+        const userDB = await this.userRepository.findOne({
+            where: {
+                id: userId
+            },
+            relations: ['gameProfile']
+        });
+
+        if (!userDB) throw new UnauthorizedException('Usuario no encontrado.');
+
+        return {
+            ok: true,
+            user: {
+                id: userDB.id,
+                userName: userDB.name,
+                email: userDB.email,
+                role: userDB.typeUser.id,
+                profileId: userDB.gameProfile?.id ?? null,
+            }
+        };
+    }
+
+    // guarda las cookies que seran tomadas luego desde el front
+    async saveCookies(res: Response, accessToken: string, refreshToken: string) {
+
+        // guarda la cookie llamada access_token
+        const TokAcess = res.cookie('access_token', accessToken, {
+            httpOnly: true,
+            secure: false,  // true en produccion HTTPS
+            sameSite: 'lax',
+            maxAge: 1000 * 60 * 15, // 15 min
+        });
+
+        // guarda la cookie llamada refresh_token
+        const TokRefr = res.cookie('refresh_token', refreshToken, {
+            httpOnly: true,
+            secure: false,
+            sameSite: 'lax',
+            maxAge: 1000 * 60 * 60 * 24  // 1 dia
+        });
+
+        return {
+            accessToken: TokAcess,
+            refreshToken: TokRefr
+        }
     }
 
 }
