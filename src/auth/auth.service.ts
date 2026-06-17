@@ -110,7 +110,7 @@ export class AuthService {
 
         return {
             ok: true,
-            msg: 'Logeado con exito!',
+            message: 'Logeado con exito!',
             user: {
                 id: user.id,
                 userName: user.name,
@@ -120,7 +120,7 @@ export class AuthService {
         }
     }
 
-    async sendEmailForgotPassword(email: string) {
+    async forgotPassword(email: string) {
         const user = await this.userRepository.findOne({
             where: { email },
         });
@@ -159,7 +159,7 @@ export class AuthService {
             relations: ['user'],
         });
 
-        if (!tokenRecord) throw new NotFoundException('Token invalido.');
+        if (!tokenRecord) throw new NotFoundException('Token inválido.');
         if (tokenRecord.expirationToken < new Date()) throw new BadRequestException('El token ha expirado.');
 
         return { message: 'Token válido.', email: tokenRecord.user.email };
@@ -173,7 +173,7 @@ export class AuthService {
             relations: ['user'],
         });
 
-        if (!tokenRecord) throw new NotFoundException('Token invalido.');
+        if (!tokenRecord) throw new NotFoundException('Token inválido.');
         if (tokenRecord.expirationToken < new Date()) throw new BadRequestException('El token ha expirado.');
 
         const user = tokenRecord.user;
@@ -184,9 +184,12 @@ export class AuthService {
         // guardamos el cambio de la contraseña
         await this.userRepository.save(user);
         // eliminamos el registro del token en la tabla para que este no pueda reutilizarse
-        await this.tokenResetRepository.remove(tokenRecord);
+        await this.tokenResetRepository.update(
+            { user: { id: user.id } },
+            { token: null, usedToken: new Date() }
+        );
 
-        return { message: 'Contraseña actualizada correctamente.' };
+        return { ok: true, message: 'Contraseña actualizada correctamente.' };
     }
 
     // genera los tokens para accessToken y refreshToken
@@ -286,7 +289,7 @@ export class AuthService {
 
         return {
             ok: true,
-            msg: "Token refrescado correctamente.",
+            message: "Token refrescado correctamente.",
         };
     }
 

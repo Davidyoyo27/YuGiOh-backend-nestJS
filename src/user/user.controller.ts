@@ -23,8 +23,8 @@ export class UserController {
   }
 
   @Post('account-activation')
-  verify(@Body() body: VerifyActivationDto) {
-    return this.userService.verifyActivation(body.emailOrNick, body.codeActivation);
+  verifyAccountActivation(@Body() body: VerifyActivationDto) {
+    return this.userService.verifyAccountActivation(body.email, body.codeActivation);
   }
 
   @UseGuards( AuthGuard(), RolesGuard )

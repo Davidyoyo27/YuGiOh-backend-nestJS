@@ -39,7 +39,7 @@ export class AuthController {
   // ingresas tu correo para solicitar el cambio de contraseña
   @Post('forgot-your-password')
   forgotPassword(@Body() body: EmailResetPasswordDto) {
-    return this.authService.sendEmailForgotPassword(body.email);
+    return this.authService.forgotPassword(body.email);
   }
 
   // endpoint de validacion del token generado en 'forgot-your-password'
