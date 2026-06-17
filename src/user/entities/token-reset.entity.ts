@@ -13,8 +13,9 @@ export class TokenReset {
     @Column({
         type: 'text',
         unique: true,
+        nullable: true,
     })
-    token!: string;
+    token!: string | null;
 
     @Column({
         type: 'timestamp',
@@ -22,6 +23,14 @@ export class TokenReset {
         nullable: false,
     })
     expirationToken!: Date;
+
+    // campo para verificar cuando fue usado en token
+    @Column({
+        type: 'timestamp',
+        precision: 6,
+        nullable: true,
+    })
+    usedToken: Date;
 
     // relacion
     @ManyToOne(

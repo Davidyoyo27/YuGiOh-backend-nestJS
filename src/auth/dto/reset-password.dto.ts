@@ -6,11 +6,14 @@ export class ResetPasswordDto {
     @IsString()
     token: string;
 
-    @MinLength(6, { message: 'La contraseña debe tener minimo 6 caracteres' })
+    @MinLength(6, { message: 'La contraseña debe tener minimo 6 caracteres.' })
     @Matches(/^(?=.*[A-Z])(?=.*\d).+$/, {
-        message: 'La contraseña debe contener al menos una letra mayúscula y un número',
+        message: 'La contraseña debe contener al menos una letra mayúscula y un número.',
     })
-    @IsNotEmpty({ message: 'Debe ingresar una contraseña' })
+    @IsNotEmpty({ message: 'Debe ingresar una contraseña.' })
+    @Matches(/^\S+$/, {
+        message: 'La contraseña no puede contener espacios.',
+    })
     newPassword: string;
 
 }

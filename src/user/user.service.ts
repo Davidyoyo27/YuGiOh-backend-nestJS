@@ -36,6 +36,9 @@ export class UserService {
     try {
 
       const { password, passwordConfirm, ...userData } = createUserDto;
+
+      if(password !== passwordConfirm) throw new BadRequestException('Las contraseñas no coinciden.');
+
       //                                                              2: duelista
       const userType = await this.userTypeRepository.findOne({ where: { id: 2 } });
 
@@ -66,7 +69,7 @@ export class UserService {
         },
       );
 
-      return { ok: true, message: 'Usuario creado. Revisa tu correo para activar la cuenta', user };
+      return { ok: true, message: 'Usuario creado. Revisa tu correo para activar la cuenta.' };
     } catch (error) {
       this.handleDBException(error);
     }
@@ -129,14 +132,14 @@ export class UserService {
     return this.userRepository.save(user);
   }
 
-  async verifyActivation(emailUser: string, code: string) {
+  async verifyAccountActivation(emailUser: string, code: string) {
     const user = await this.userRepository.findOne({
       // para realizar el filtro puede usar el email
       where: [{ email: emailUser }],
       select: ['id', 'email', 'activationCode', 'activationCodeExpires', 'isActive'],
     });
 
-    if (!user) throw new NotFoundException('Usuario no encontrado.');
+    if (!user) throw new NotFoundException('El correo ingresado no se encuentra registrado.');
     if (user.isActive) throw new BadRequestException('Cuenta ya activada.');
 
     if (!user.activationCode || user.activationCode !== code)
