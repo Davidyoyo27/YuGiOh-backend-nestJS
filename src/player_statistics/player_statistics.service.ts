@@ -34,7 +34,7 @@ export class PlayerStatisticsService {
   async getAllRecordPlayer(profileId: string | number): Promise<PlayerStatisticsResponseDto> {
 
     if (typeof profileId !== 'number')
-      throw new BadRequestException('Debes tener un perfil de jugador creado para poder visualizar tus estadisticas.');
+      throw new BadRequestException('Debes tener un perfil de jugador creado para poder visualizar tus estadísticas.');
 
     const statisticsPlayer = await this.playerStatisticsRepository.getStatisticsPlayer(profileId);
 
@@ -55,7 +55,7 @@ export class PlayerStatisticsService {
   async getRecordPlayerVsPlayer(profileId: string | number, playerId: number): Promise<PlayerVsStatisticsResponseDto> {
 
     if (typeof profileId !== 'number')
-      throw new BadRequestException('Debes tener un perfil de jugador creado para poder visualizar tus estadisticas.');
+      throw new BadRequestException('Debes tener un perfil de jugador creado para poder visualizar tus estadísticas.');
 
     const statisticsPlayerVS = await this.playerStatisticsRepository.getStatisticsPlayerVSPlayer(profileId, playerId);
 
