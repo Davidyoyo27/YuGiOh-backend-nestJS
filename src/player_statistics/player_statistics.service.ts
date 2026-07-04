@@ -232,4 +232,14 @@ export class PlayerStatisticsService {
 
   }
 
+  async getStatisticsUserLastsDuels(profileId: string | number, hoursPerSession: number, months: number ){
+
+    if (typeof profileId !== 'number')
+      throw new BadRequestException('Debes tener un perfil de jugador creado para poder visualizar tus estadísticas.');
+
+    const statisticsLastDuels = await this.playerStatisticsRepository.lastsDuelsResultsByUser(profileId, hoursPerSession, months);
+
+    return statisticsLastDuels;
+  }
+
 }

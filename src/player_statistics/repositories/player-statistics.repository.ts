@@ -39,4 +39,13 @@ export class PlayerStatisticsRepository {
             .getRawMany();
     }
 
+    async lastsDuelsResultsByUser(profileId: number, hoursPerSession: number, months: number) {
+        const result = await this.dataSource.query(
+            'SELECT * FROM lastsDuelsResultsByUser($1, $2, $3)',
+            [profileId, hoursPerSession, months]
+        );
+
+        return result;
+    }
+
 }
