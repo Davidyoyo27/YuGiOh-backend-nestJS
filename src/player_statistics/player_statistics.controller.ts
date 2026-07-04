@@ -5,9 +5,14 @@ import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { AddStatisticsPlayerDto } from './dto/add-statistics-player.dto';
+import { appConfig } from 'src/config/app.config';
 
 @Controller('statistics')
 export class PlayerStatisticsController {
+
+  private readonly hoursPerSession = appConfig.statistics.defaultHoursPerSession;
+  private readonly months = appConfig.statistics.defaultMonths;
+
   constructor(readonly playerStatisticsService: PlayerStatisticsService) { }
 
   @UseGuards(AuthGuard(), RolesGuard)
@@ -46,6 +51,15 @@ export class PlayerStatisticsController {
     @Param('id', ParseIntPipe) playerId: number
   ){
     return this.playerStatisticsService.addVictoriesOrDefeatsToPlayers(addStatisticsPlayerDto, adminId, playerId);
+  }
+
+  @UseGuards(AuthGuard(), RolesGuard)
+  @Roles(2)
+  @Get('user-lasts-duels')
+  getStatisticsUserLastsDuels(
+    @CurrentUserId('profileId') profileId: string | number
+  ){
+    return this.playerStatisticsService.getStatisticsUserLastsDuels(profileId, this.hoursPerSession, this.months);
   }
 
 }
