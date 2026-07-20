@@ -56,7 +56,21 @@ export class AuthService {
 
         const user = await this.userRepository.findOne({
             where: { email },
-            select: { email: true, password: true, id: true, isActive: true }
+            // DATO: select no carga relaciones
+            select: {
+                email: true, 
+                password: true, 
+                id: true, 
+                isActive: true, 
+                name: true,
+                gameProfile: {
+                    id: true, 
+                    nickName: true,
+                    createdAt: true,
+                    avatarUrl: true,
+                },
+            },
+            relations: { gameProfile: true },
         });
 
         if (!user) {
@@ -116,6 +130,10 @@ export class AuthService {
                 userName: user.name,
                 email: user.email,
                 role: user.typeUser,
+                profileId: user.gameProfile?.id ?? null,
+                nickName: user.gameProfile?.nickName ?? null,
+                createdAt: user.gameProfile?.createdAt ?? null,
+                avatarUrl: user.gameProfile?.avatarUrl ?? null,
             },
         }
     }
@@ -574,6 +592,8 @@ export class AuthService {
     }
 
     // comprueba en el front el usuario que esta en la sesion
+    // NOTA: Recordar que si se desea agregar algun dato nuevo para el checkAuth 
+    // ese mismo dato debe ser retornado en la respuesta del login
     async checkAuth(userId: string) {
 
         const userDB = await this.userRepository.findOne({
@@ -593,6 +613,9 @@ export class AuthService {
                 email: userDB.email,
                 role: userDB.typeUser.id,
                 profileId: userDB.gameProfile?.id ?? null,
+                nickName: userDB.gameProfile?.nickName ?? null,
+                createdAt: userDB.gameProfile?.createdAt ?? null,
+                avatarUrl: userDB.gameProfile?.avatarUrl ?? null,
             }
         };
     }

@@ -22,7 +22,7 @@ export class GameProfile {
         type: 'text',
         nullable: true
     })
-    avatarImage?: string;
+    avatarUrl?: string;
 
     @CreateDateColumn()
     createdAt!: Date;

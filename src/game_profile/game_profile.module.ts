@@ -4,7 +4,7 @@ import { GameProfileController } from './game_profile.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PassportModule } from '@nestjs/passport';
 import { GameProfile } from '../game_profile/entities/game-profile.entity';
-import { LocalStorageModule } from 'src/files/storage/local-storage.module';
+import { StorageModule } from 'src/storage/storage.module';
 
 @Module({
   controllers: [GameProfileController],
@@ -14,7 +14,7 @@ import { LocalStorageModule } from 'src/files/storage/local-storage.module';
 
     PassportModule.register({ defaultStrategy: 'jwt' }),
 
-    LocalStorageModule
+    StorageModule,
   ]
 })
 export class GameProfileModule { }
