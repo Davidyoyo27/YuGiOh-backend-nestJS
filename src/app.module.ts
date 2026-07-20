@@ -12,6 +12,7 @@ import { DuelGameModule } from './duel_game/duel_game.module';
 import { UserDuelGameModule } from './user_duel_game/user_duel_game.module';
 import { PlayerStatisticsModule } from './player_statistics/player_statistics.module';
 import { AuditModule } from './audit/audit.module';
+import { StorageModule } from './storage/storage.module';
 import configuration from './config';
 
 @Module({
@@ -33,7 +34,7 @@ import configuration from './config';
     }),
 
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname,'..','uploads'),
+      rootPath: join(__dirname, '..', 'uploads'),
       serveRoot: '/uploads',
     }),
 
@@ -46,6 +47,7 @@ import configuration from './config';
     UserDuelGameModule,
     PlayerStatisticsModule,
     AuditModule,
+    StorageModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }

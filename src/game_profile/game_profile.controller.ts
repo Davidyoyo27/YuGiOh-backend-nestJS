@@ -1,5 +1,6 @@
-import { Controller, Post, Body, Patch, 
-  UseGuards, UploadedFile, UseInterceptors, BadRequestException 
+import {
+  Controller, Post, Body, Patch,
+  UseGuards, UploadedFile, UseInterceptors, BadRequestException
 } from '@nestjs/common';
 import { GameProfileService } from './game_profile.service';
 import { CreateGameProfileDto } from './dto/create-game_profile.dto';
@@ -39,13 +40,18 @@ export class GameProfileController {
 
   // endpoint que realiza la subida de la imagen del avatar/perfil del perfil de juego del usuario
   @UseGuards(AuthGuard())
-  @Post('profile/create-file/upload-avatar')
+  @Post('profile/upload-avatar')
   @UseInterceptors(
     FileInterceptor('avatar', {
       limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB
       fileFilter: (req, file, cb) => {
         if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
-          cb(new BadRequestException('formato de imagen no valido.'), false);
+          return cb(
+            new BadRequestException(
+              'Formato de imagen no válido.'
+            ),
+            false,
+          );
         }
         cb(null, true);
       }

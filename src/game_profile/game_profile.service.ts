@@ -7,7 +7,7 @@ import { GameProfile } from '../game_profile/entities/game-profile.entity';
 import { CreateGameProfileDto } from './dto/create-game_profile.dto';
 import { UpdateGameProfileDto } from './dto/update-game_profile.dto';
 
-import { LocalStorageService } from 'src/files/storage/local-storage.service';
+import { StorageService } from 'src/storage/storage.service';
 
 @Injectable()
 export class GameProfileService {
@@ -16,7 +16,7 @@ export class GameProfileService {
     @InjectRepository(GameProfile)
     private readonly userGameProfileRepository: Repository<GameProfile>,
 
-    private readonly localStorageService: LocalStorageService,
+    private readonly storageService: StorageService,
   ) { }
 
   async create(createGameProfileDto: CreateGameProfileDto, userId: string) {
@@ -69,17 +69,26 @@ export class GameProfileService {
 
     if (!gameProfile) throw new NotFoundException('El perfil del jugador no fue encontrado.');
 
-    const fileName = `user-${userId}.webp`;
-    const pathUploadedImage = await this.localStorageService.uploadAvatar(file.buffer, fileName);
+    const pathUploadedImage = await this.storageService.uploadAvatar(file, userId);
 
     await this.userGameProfileRepository.update(
       { user: { id: userId } },
-      { avatarImage: pathUploadedImage }
+      { avatarUrl: pathUploadedImage }
     );
 
     return {
       ok: true,
       message: 'Imagen del Avatar guardada correctamente.',
+      user: {
+        id: gameProfile.user.id,
+        userName: gameProfile.user.name,
+        email: gameProfile.user.email,
+        role: gameProfile.user.typeUser.id,
+        profileId: gameProfile?.id ?? null,
+        nickName: gameProfile?.nickName ?? null,
+        createdAt: gameProfile?.createdAt ?? null,
+        avatarUrl: gameProfile?.avatarUrl ?? null,
+      }
     };
   }
 
