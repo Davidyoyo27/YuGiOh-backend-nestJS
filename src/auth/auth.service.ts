@@ -63,6 +63,7 @@ export class AuthService {
                 id: true, 
                 isActive: true, 
                 name: true,
+                lastName: true,
                 gameProfile: {
                     id: true, 
                     nickName: true,
@@ -128,6 +129,7 @@ export class AuthService {
             user: {
                 id: user.id,
                 userName: user.name,
+                lastName: user.lastName,
                 email: user.email,
                 role: user.typeUser,
                 profileId: user.gameProfile?.id ?? null,
@@ -610,6 +612,7 @@ export class AuthService {
             user: {
                 id: userDB.id,
                 userName: userDB.name,
+                lastName: userDB.lastName,
                 email: userDB.email,
                 role: userDB.typeUser.id,
                 profileId: userDB.gameProfile?.id ?? null,

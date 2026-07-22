@@ -10,6 +10,7 @@ import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { ChangeUserPasswordDto } from './dto/change-password.dto';
 import { UuidValidationPipe } from 'src/common/pipes/uuid-validation.pipe';
+import { CurrentUserId } from 'src/common/decorators/current-user-id.decorator';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('user')
@@ -43,12 +44,12 @@ export class UserController {
 
   @UseGuards( AuthGuard(), RolesGuard )
   @Roles(2)
-  @Patch(':id')
-  update(
-    @Param('id', new UuidValidationPipe()) id: string, 
+  @Patch('update-user-account')
+  updateUserAccount(
+    @CurrentUserId('id') userId: string,
     @Body() updateUserDto: UpdateUserDto
   ) {
-    return this.userService.update(id, updateUserDto);
+    return this.userService.updateUserAccount(userId, updateUserDto);
   }
 
   @UseGuards( AuthGuard(), RolesGuard )
