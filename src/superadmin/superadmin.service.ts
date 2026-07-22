@@ -159,7 +159,7 @@ export class SuperadminService {
 
   async update(id: string, updateUserDto: UpdateUserDto) {
 
-    const { lastName, passwordConfirm, ...restData } = updateUserDto;
+    const { lastName, ...restData } = updateUserDto;
 
     const user = await this.userRepository.preload({
       id,

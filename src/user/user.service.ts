@@ -37,7 +37,7 @@ export class UserService {
 
       const { password, passwordConfirm, ...userData } = createUserDto;
 
-      if(password !== passwordConfirm) throw new BadRequestException('Las contraseñas no coinciden.');
+      if (password !== passwordConfirm) throw new BadRequestException('Las contraseñas no coinciden.');
 
       //                                                              2: duelista
       const userType = await this.userTypeRepository.findOne({ where: { id: 2 } });
@@ -117,7 +117,7 @@ export class UserService {
     return user;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto) {
+  async updateUserAccount(id: string, updateUserDto: UpdateUserDto) {
 
     const { lastName, ...rest } = updateUserDto;
 
@@ -129,7 +129,16 @@ export class UserService {
 
     if (!user) throw new NotFoundException(`El usuario con el id ${id} no fue encontrado.`);
 
-    return this.userRepository.save(user);
+    await this.userRepository.save(user);
+
+    return {
+      ok: true, 
+      message: "Perfil de usuario actualizado correctamente.", 
+      user: {
+        userName: user.name,
+        lastName: user.lastName,
+      }
+    }
   }
 
   async verifyAccountActivation(emailUser: string, code: string) {
