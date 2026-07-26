@@ -3,6 +3,7 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { GameProfile } from '../game_profile/entities/game-profile.entity';
+import { User } from 'src/user/entities/user.entity';
 
 import { CreateGameProfileDto } from './dto/create-game_profile.dto';
 import { UpdateGameProfileDto } from './dto/update-game_profile.dto';
@@ -16,10 +17,13 @@ export class GameProfileService {
     @InjectRepository(GameProfile)
     private readonly userGameProfileRepository: Repository<GameProfile>,
 
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+
     private readonly storageService: StorageService,
   ) { }
 
-  async create(createGameProfileDto: CreateGameProfileDto, userId: string) {
+  async createGameProfile(createGameProfileDto: CreateGameProfileDto, userId: string) {
     // verificamos primeramente si existe un perfil ya creado, 
     // recordar que solo puede existir un perfil por usuario
     const existProfile = await this.userGameProfileRepository.findOne({
@@ -36,11 +40,34 @@ export class GameProfileService {
       user: { id: userId }
     });
 
-    return await this.userGameProfileRepository.save(profile);
+    await this.userGameProfileRepository.save(profile);
+
+    const userDB = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['gameProfile'],
+    });
+
+    return {
+      ok: true,
+      message: 'Perfil de jugador creado correctamente.',
+      // DATO: retornamos los nuevos datos de gameProfile para que el Front pueda mostrar la data actualizada
+      // en el checkAuth sin necesidad de recargar la pagina para visualizarlos
+      user: {
+        id: userDB?.id,
+        userName: userDB?.name,
+        lastName: userDB?.lastName,
+        email: userDB?.email,
+        role: userDB?.typeUser.id,
+        profileId: userDB?.gameProfile.id ?? null,
+        nickName: userDB?.gameProfile.nickName ?? null,
+        createdAt: userDB?.gameProfile.createdAt ?? null,
+        avatarUrl: userDB?.gameProfile.avatarUrl ?? null,
+      }
+    }
   }
 
   // actualizacion del perfil del jugador
-  async update(userId: string, updateGameProfileDto: UpdateGameProfileDto) {
+  async updateGameProfile(userId: string, updateGameProfileDto: UpdateGameProfileDto) {
 
     const { nickName } = updateGameProfileDto;
 
@@ -51,11 +78,25 @@ export class GameProfileService {
     if (!userGameProfile) throw new NotFoundException('El perfil del jugador no fue encontrado.');
 
     // campos que se desean actualizar
-    userGameProfile.nickName = nickName;
+    userGameProfile.nickName = nickName?.trim();
 
-    await this.userGameProfileRepository.save(userGameProfile);
+    await this.userGameProfileRepository.save(userGameProfile);    
 
-    return { ok: true, message: 'Apodo modificado con exito.' }
+    return {
+      ok: true,
+      message: 'Apodo modificado con exito.',
+      user: {
+        id: userGameProfile.user.id,
+        userName: userGameProfile.user.name,
+        lastName: userGameProfile.user.lastName,
+        email: userGameProfile.user.email,
+        role: userGameProfile.user.typeUser.id,
+        profileId: userGameProfile.id,
+        nickName: userGameProfile.nickName,
+        createdAt: userGameProfile.createdAt,
+        avatarUrl: userGameProfile.avatarUrl,
+      }
+    }
   }
 
   // sube la imagen de perfil del avatar

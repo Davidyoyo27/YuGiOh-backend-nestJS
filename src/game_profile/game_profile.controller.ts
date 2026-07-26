@@ -19,23 +19,23 @@ export class GameProfileController {
   // crear el perfil del jugador
   @UseGuards(AuthGuard())
   @Post('profile/create-profile')
-  create(
+  createGameProfile(
     @Body() createGameProfileDto: CreateGameProfileDto,
     // este decorador permite traer el ID del usuario
     @CurrentUserId('id') userId: string
   ) {
-    return this.gameProfileService.create(createGameProfileDto, userId);
+    return this.gameProfileService.createGameProfile(createGameProfileDto, userId);
   }
 
   // editar campos del perfil del jugador
   @UseGuards(AuthGuard())
   // sin el /:id ya que el id del usuario viene desde el decorator internamente en el endpoint
-  @Patch('profile/edit-profile')
-  update(
+  @Patch('profile/update-profile')
+  updateGameProfile(
     @CurrentUserId('id') userId: string,
     @Body() updateGameProfileDto: UpdateGameProfileDto
   ) {
-    return this.gameProfileService.update(userId, updateGameProfileDto);
+    return this.gameProfileService.updateGameProfile(userId, updateGameProfileDto);
   }
 
   // endpoint que realiza la subida de la imagen del avatar/perfil del perfil de juego del usuario
