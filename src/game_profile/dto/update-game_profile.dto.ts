@@ -1,4 +1,12 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateGameProfileDto } from './create-game_profile.dto';
+import { IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { Transform } from "class-transformer";
 
-export class UpdateGameProfileDto extends PartialType(CreateGameProfileDto) {}
+export class UpdateGameProfileDto {
+
+    @IsString()
+    @IsOptional()
+    @IsNotEmpty({ message: 'Debe ingresar un apodo.' })
+    @Transform(({ value }) => value?.trim() || null)
+    nickName: string;
+
+}
