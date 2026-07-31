@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException, Injectable,
   InternalServerErrorException, Logger, NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ILike, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -131,12 +132,28 @@ export class UserService {
 
     await this.userRepository.save(user);
 
+    const userDB = await this.userRepository.findOne({
+      where: {
+        id: user.id
+      },
+      relations: ['typeUser', 'gameProfile']
+    });
+
+    if (!userDB) throw new UnauthorizedException('Usuario no encontrado.');
+
     return {
-      ok: true, 
-      message: "Perfil de usuario actualizado correctamente.", 
+      ok: true,
+      message: "Perfil de usuario actualizado correctamente.",
       user: {
-        userName: user.name,
-        lastName: user.lastName,
+        id: userDB.id,
+        userName: userDB.name,
+        lastName: userDB.lastName,
+        email: userDB.email,
+        role: userDB.typeUser.id,
+        profileId: userDB.gameProfile?.id ?? null,
+        nickName: userDB.gameProfile?.nickName ?? null,
+        createdAt: userDB.gameProfile?.createdAt ?? null,
+        avatarUrl: userDB.gameProfile?.avatarUrl ?? null,
       }
     }
   }
