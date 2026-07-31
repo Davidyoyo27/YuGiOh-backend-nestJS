@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -80,21 +80,28 @@ export class GameProfileService {
     // campos que se desean actualizar
     userGameProfile.nickName = nickName?.trim();
 
-    await this.userGameProfileRepository.save(userGameProfile);    
+    await this.userGameProfileRepository.save(userGameProfile);
+
+    const userDB = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['typeUser', 'gameProfile']
+    });
+
+    if (!userDB) throw new UnauthorizedException('Usuario no encontrado.');
 
     return {
       ok: true,
       message: 'Apodo modificado con exito.',
       user: {
-        id: userGameProfile.user.id,
-        userName: userGameProfile.user.name,
-        lastName: userGameProfile.user.lastName,
-        email: userGameProfile.user.email,
-        role: userGameProfile.user.typeUser.id,
-        profileId: userGameProfile.id,
-        nickName: userGameProfile.nickName,
-        createdAt: userGameProfile.createdAt,
-        avatarUrl: userGameProfile.avatarUrl,
+        id: userDB.id,
+        userName: userDB.name,
+        lastName: userDB.lastName,
+        email: userDB.email,
+        role: userDB.typeUser.id,
+        profileId: userDB.gameProfile.id,
+        nickName: userDB.gameProfile.nickName,
+        createdAt: userDB.gameProfile.createdAt,
+        avatarUrl: userDB.gameProfile.avatarUrl,
       }
     }
   }
