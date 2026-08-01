@@ -183,12 +183,22 @@ export class UserService {
     return { ok: true, message: 'Cuenta activada correctamente.' };
   }
 
-  async changePassword(id: string, changeUserPasswordDto: ChangeUserPasswordDto) {
+  async changePassword(userId: string, changeUserPasswordDto: ChangeUserPasswordDto) {
     const user = await this.userRepository.findOne({
-      where: { id },
+      where: { id: userId },
+      select: {
+        id: true,
+        password: true,
+      }
     });
 
     if (!user) throw new NotFoundException('Usuario no encontrado.');
+
+    const { currentPassword } = changeUserPasswordDto;
+
+    if (!bcrypt.compareSync(currentPassword, user.password)) {
+      throw new UnauthorizedException('La contraseña actual ingresada no coincide con la registrada.');
+    }
 
     const newPassword = changeUserPasswordDto.password;
     const passwordHashed = bcrypt.hashSync(newPassword, 10);
