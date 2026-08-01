@@ -54,12 +54,12 @@ export class UserController {
 
   @UseGuards( AuthGuard(), RolesGuard )
   @Roles(2)
-  @Patch('change-password/:id')
+  @Patch('change-password')
   changeUserPassword(
-    @Param('id', new UuidValidationPipe()) id: string,
+    @CurrentUserId('id') userId: string,
     @Body() changeUserPasswordDto: ChangeUserPasswordDto
   ){
-    return this.userService.changePassword(id, changeUserPasswordDto);
+    return this.userService.changePassword(userId, changeUserPasswordDto);
   }
   
 }
