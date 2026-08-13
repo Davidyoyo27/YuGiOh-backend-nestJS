@@ -62,4 +62,13 @@ export class PlayerStatisticsController {
     return this.playerStatisticsService.getStatisticsUserLastsDuels(profileId, this.hoursPerSession, this.months);
   }
 
+  @UseGuards(AuthGuard(), RolesGuard)
+  @Roles(2)
+  @Get('player-history-duels')
+  getPlayerHistoryDuels(
+    @CurrentUserId('profileId') profileId: string | number
+  ){
+    return this.playerStatisticsService.getPlayerHistoryDuels(profileId);
+  }
+
 }

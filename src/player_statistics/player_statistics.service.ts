@@ -232,7 +232,7 @@ export class PlayerStatisticsService {
 
   }
 
-  async getStatisticsUserLastsDuels(profileId: string | number, hoursPerSession: number, months: number ){
+  async getStatisticsUserLastsDuels(profileId: string | number, hoursPerSession: number, months: number) {
 
     if (typeof profileId !== 'number')
       throw new BadRequestException('Debes tener un perfil de jugador creado para poder visualizar tus estadísticas.');
@@ -240,6 +240,16 @@ export class PlayerStatisticsService {
     const statisticsLastDuels = await this.playerStatisticsRepository.lastsDuelsResultsByUser(profileId, hoursPerSession, months);
 
     return statisticsLastDuels;
+  }
+
+  async getPlayerHistoryDuels(profileId: string | number) {
+
+    if (typeof profileId !== 'number')
+      throw new BadRequestException('Debes tener un perfil de jugador creado para poder visualizar tus estadísticas.');
+
+    const statisticsHistoryPlayerDuels = await this.playerStatisticsRepository.getHistoryDuelsPlayer(profileId);
+
+    return statisticsHistoryPlayerDuels;
   }
 
 }

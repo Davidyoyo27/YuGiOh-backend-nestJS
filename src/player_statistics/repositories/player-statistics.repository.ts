@@ -39,10 +39,21 @@ export class PlayerStatisticsRepository {
             .getRawMany();
     }
 
+    // llamada al SP/funcion en la BD
     async lastsDuelsResultsByUser(profileId: number, hoursPerSession: number, months: number) {
         const result = await this.dataSource.query(
             'SELECT * FROM lastsDuelsResultsByUser($1, $2, $3)',
             [profileId, hoursPerSession, months]
+        );
+
+        return result;
+    }
+
+    // llamada al SP/funcion en la BD
+    async getHistoryDuelsPlayer(profileId: number){
+        const result = await this.dataSource.query(
+            'SELECT * FROM getPlayerDuelsHistory($1)',
+            [profileId]
         );
 
         return result;
