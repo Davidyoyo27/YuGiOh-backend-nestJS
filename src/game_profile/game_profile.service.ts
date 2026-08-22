@@ -140,4 +140,19 @@ export class GameProfileService {
     };
   }
 
+  async playersNickName(profileId: string | number) {
+
+    if (typeof profileId !== 'number')
+      throw new BadRequestException('Debes tener un perfil de jugador creado para poder visualizar tus estadísticas.');
+
+    return this.userGameProfileRepository
+      .createQueryBuilder('gmp')
+      .select([
+        'gmp.id',
+        'gmp.nickName'
+      ])
+      .where('gmp.id <> :profileId', { profileId })
+      .getMany();
+  }
+
 }
