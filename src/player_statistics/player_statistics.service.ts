@@ -60,12 +60,14 @@ export class PlayerStatisticsService {
     const statisticsPlayerVS = await this.playerStatisticsRepository.getStatisticsPlayerVSPlayer(profileId, playerId);
 
     return {
+      nickNameOpponent: statisticsPlayerVS.nickname_opponent,
       totalDuels: statisticsPlayerVS.total_duels,
       winsPlayer1: statisticsPlayerVS.wins_player1,
       winsPlayer2: statisticsPlayerVS.wins_player2,
       ties: statisticsPlayerVS.draws,
-      percentagePlayer1: statisticsPlayerVS.percentage_player1,
-      percentagePlayer2: statisticsPlayerVS.percentage_player2
+      percentagePlayer1: statisticsPlayerVS.percentage_wins_player1,
+      percentagePlayer2: statisticsPlayerVS.percentage_wins_player2,
+      percentageDrawPlayers: statisticsPlayerVS.percentage_draw_players
     };
   }
 
