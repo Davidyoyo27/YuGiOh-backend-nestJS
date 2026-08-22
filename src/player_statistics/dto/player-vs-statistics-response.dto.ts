@@ -3,6 +3,9 @@ import { Expose } from "class-transformer";
 export class PlayerVsStatisticsResponseDto {
 
     @Expose()
+    nickNameOpponent: string;
+
+    @Expose()
     totalDuels: number;
 
     @Expose()
@@ -19,5 +22,8 @@ export class PlayerVsStatisticsResponseDto {
 
     @Expose()
     percentagePlayer2: number;
+
+    @Expose()
+    percentageDrawPlayers: number;
     
 }
