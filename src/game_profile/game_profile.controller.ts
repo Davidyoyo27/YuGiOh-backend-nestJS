@@ -1,11 +1,14 @@
 import {
   Controller, Post, Body, Patch,
-  UseGuards, UploadedFile, UseInterceptors, BadRequestException
+  UseGuards, UploadedFile, UseInterceptors, BadRequestException,
+  Get
 } from '@nestjs/common';
 import { GameProfileService } from './game_profile.service';
 import { CreateGameProfileDto } from './dto/create-game_profile.dto';
 import { UpdateGameProfileDto } from './dto/update-game_profile.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { Roles } from 'src/auth/decorators/roles.decorator';
 import { CurrentUserId } from 'src/common/decorators/current-user-id.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 // NO BORRAR: aunque no se use si se quita dara error en Express.Multer.File
@@ -63,6 +66,15 @@ export class GameProfileController {
     @CurrentUserId('id') userId: string
   ) {
     return this.gameProfileService.uploadAvatarImage(userId, file);
+  }
+
+  @UseGuards(AuthGuard(), RolesGuard)
+  @Roles(2)
+  @Get('profile/players-nickname')
+  playersNickName(
+    @CurrentUserId('profileId') profileId: string | number,
+  ) {
+    return this.gameProfileService.playersNickName(profileId);
   }
 
 }
