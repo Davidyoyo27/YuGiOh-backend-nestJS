@@ -17,9 +17,9 @@ export class DuelGameController {
   @Post('create-duel')
   createDuelGame(
     @Body() createDuelGameDto: CreateDuelGameDto,
-    @CurrentUserId('id') userId: string
+    @CurrentUserId('profileId') profileId: string | number
   ) {
-    return this.duelGameService.createDuelGame(createDuelGameDto, userId);
+    return this.duelGameService.createDuelGame(createDuelGameDto, profileId);
   }
 
   // retornar todos los duelos disponibles para que un duelista pueda unirse

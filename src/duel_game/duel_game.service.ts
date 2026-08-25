@@ -27,15 +27,13 @@ export class DuelGameService {
     private readonly dataSource: DataSource,
   ) { }
 
-  async createDuelGame(createDuelGameDto: CreateDuelGameDto, userId: string) {
+  async createDuelGame(createDuelGameDto: CreateDuelGameDto, profileId: string | number) {
 
     const { playersNumber, typeDuel, roomName } = createDuelGameDto;
 
-    const userGameProfile = await this.userGameProfileRepository.findOne({
-      where: { user: { id: userId } }
-    });
+    console.log(profileId);
 
-    if (!userGameProfile) throw new NotFoundException('Debes tener tu perfil de jugador para poder crear duelos.');
+    if (typeof  profileId !== 'number') throw new BadRequestException('Debes tener tu perfil de jugador para poder crear duelos.');
 
     if (playersNumber < 2)
       throw new BadRequestException('El valor minimo de jugadores debe ser 2 para poder crear el duelo.');
@@ -48,13 +46,13 @@ export class DuelGameService {
       duelDateCreated: new Date(),
       typeDuel: { id: typeDuel },
       typeState: { id: 1 },  // 1 = esperando
-      createdBy: { id: userGameProfile.id },
+      createdBy: { id: profileId },
       roomName
     });
 
     await this.duelGameRepository.save(duel);
 
-    return { ok: true, message: 'Duelo creado correctamente.', duel, userGameProfile };
+    return { ok: true, message: 'Duelo creado correctamente.' };
   }
 
   // retorna todos los duelos con estado "esperando"
