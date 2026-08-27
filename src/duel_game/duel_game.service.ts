@@ -13,6 +13,7 @@ import { ConfirmedDuelCanceledDto } from './dto/confirmed-duel-canceled.dto';
 import { isNumberPairPositive } from 'src/common/utils/functions';
 import { DataSource } from 'typeorm';
 import { DuelResult } from 'src/common/utils/duel-result';
+import { DuelType } from './entities/duel-type.entity';
 
 @Injectable()
 export class DuelGameService {
@@ -21,8 +22,8 @@ export class DuelGameService {
     @InjectRepository(DuelGame)
     private readonly duelGameRepository: Repository<DuelGame>,
 
-    @InjectRepository(GameProfile)
-    private readonly userGameProfileRepository: Repository<GameProfile>,
+    @InjectRepository(DuelType)
+    private readonly userTypeDuel: Repository<DuelType>,
 
     private readonly dataSource: DataSource,
   ) { }
@@ -31,9 +32,7 @@ export class DuelGameService {
 
     const { playersNumber, typeDuel, roomName } = createDuelGameDto;
 
-    console.log(profileId);
-
-    if (typeof  profileId !== 'number') throw new BadRequestException('Debes tener tu perfil de jugador para poder crear duelos.');
+    if (typeof profileId !== 'number') throw new BadRequestException('Debes tener tu perfil de jugador para poder crear duelos.');
 
     if (playersNumber < 2)
       throw new BadRequestException('El valor minimo de jugadores debe ser 2 para poder crear el duelo.');
@@ -234,5 +233,15 @@ export class DuelGameService {
       return { ok: true, message: 'Resultado procesado correctamente.' };
     });
   }
-  
+
+  async typesDuels() {
+    return this.userTypeDuel
+      .createQueryBuilder('dt')
+      .select([
+        'dt.id',
+        'dt.typeName'
+      ])
+      .getMany();
+  }
+
 }

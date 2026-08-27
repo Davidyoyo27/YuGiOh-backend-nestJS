@@ -52,4 +52,11 @@ export class DuelGameController {
     return this.duelGameService.resultCancelDuel(id, body, profileId);
   }
 
+  @UseGuards(AuthGuard(), RolesGuard)
+  @Roles(2)
+  @Get('types-duels')
+  typesDuels(){
+    return this.duelGameService.typesDuels();
+  }
+
 }

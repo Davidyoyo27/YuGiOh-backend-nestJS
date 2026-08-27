@@ -7,7 +7,6 @@ import { PassportModule } from '@nestjs/passport';
 import { DuelGame } from '../duel_game/entities/duel-game.entity';
 import { DuelType } from '../duel_game/entities/duel-type.entity';
 import { DuelState } from '../duel_game/entities/duel-state.entity';
-import { GameProfile } from '../game_profile/entities/game-profile.entity';
 import { UserDuelGame } from '../user_duel_game/entities/user_duel_game.entity';
 
 import { IsRoomNameUniqueConstraint } from './decorators/validators/is-room-name-unique.validator';
@@ -19,7 +18,7 @@ import { IsRoomNameUniqueConstraint } from './decorators/validators/is-room-name
     IsRoomNameUniqueConstraint
   ],
   imports: [
-    TypeOrmModule.forFeature([ DuelGame, DuelType, DuelState, GameProfile, UserDuelGame ]),
+    TypeOrmModule.forFeature([ DuelGame, DuelType, DuelState, UserDuelGame ]),
 
     PassportModule.register({ defaultStrategy: 'jwt' }),
   ]
