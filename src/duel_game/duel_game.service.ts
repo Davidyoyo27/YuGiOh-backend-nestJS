@@ -4,7 +4,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { DuelGame } from '../duel_game/entities/duel-game.entity';
 import { DuelState } from '../duel_game/entities/duel-state.entity';
-import { GameProfile } from '../game_profile/entities/game-profile.entity';
 import { UserDuelGame } from '../user_duel_game/entities/user_duel_game.entity';
 
 import { CreateDuelGameDto } from './dto/create-duel_game.dto';
@@ -40,6 +39,10 @@ export class DuelGameService {
     if (!isNumberPairPositive(playersNumber))
       throw new BadRequestException('La cantidad de jugadores debe ser un numero par.');
 
+    // validaciones para que el torneo y duelo tag, no disponibles por ahora
+    if (typeDuel === 2) throw new BadRequestException('Tipo de duelo Torneo no esta disponible actualmente.');
+    if (typeDuel === 3) throw new BadRequestException('Tipo de duelo Tag no esta disponible actualmente');
+
     const duel = await this.duelGameRepository.create({
       playersNumber,
       duelDateCreated: new Date(),
@@ -51,7 +54,7 @@ export class DuelGameService {
 
     await this.duelGameRepository.save(duel);
 
-    return { ok: true, message: 'Duelo creado correctamente.' };
+    return { ok: true, message: 'Sala del duelo creada correctamente.' };
   }
 
   // retorna todos los duelos con estado "esperando"
