@@ -5,14 +5,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DuelGame } from '../duel_game/entities/duel-game.entity';
 import { DuelState } from '../duel_game/entities/duel-state.entity';
 import { UserDuelGame } from '../user_duel_game/entities/user_duel_game.entity';
+import { DuelResult } from 'src/common/utils/duel-result';
+import { DuelType } from './entities/duel-type.entity';
+import { GameProfile } from 'src/game_profile/entities/game-profile.entity';
 
 import { CreateDuelGameDto } from './dto/create-duel_game.dto';
 import { ConfirmedDuelCanceledDto } from './dto/confirmed-duel-canceled.dto';
 
 import { isNumberPairPositive } from 'src/common/utils/functions';
 import { DataSource } from 'typeorm';
-import { DuelResult } from 'src/common/utils/duel-result';
-import { DuelType } from './entities/duel-type.entity';
 
 @Injectable()
 export class DuelGameService {
@@ -60,17 +61,48 @@ export class DuelGameService {
   // retorna todos los duelos con estado "esperando"
   async findAllAvailableDuels() {
 
-    const duels = await this.duelGameRepository.find({
-      where: { typeState: { id: 1 } }
-    })
+    const rooms = await this.duelGameRepository
+      .createQueryBuilder('dg')
+      .innerJoin(
+        GameProfile,
+        'gp',
+        'gp.id = dg.createdById'
+      )
+      .innerJoin(
+        DuelType,
+        'dt',
+        'dt.id = dg.typeDuelId'
+      )
+      .innerJoin(
+        DuelState,
+        'ds',
+        'ds.id = dg.typeStateId'
+      )
+      .select([
+        'dg.id',
+        'dg.roomName',
+        'dg.playersNumber',
+        'dg.playersJoined',
+        'gp.nickName',
+        'dt.description',
+        'dg.duelDateCreated',
+        'ds.stateName'
+      ])
+      // Filtro
+      .where('dg.typeStateId = 1')
+      .orderBy('dg.duelDateCreated', 'DESC')
+      .getRawMany();
 
-    const duelsFiltered = duels.map(items => {
+    const duelsFiltered = rooms.map(items => {
       return {
-        id: items.id,
-        type: items.typeDuel.description.split(' ')[0],
-        playersJoined: items.playersJoined,
-        maxPlayers: items.playersNumber,
-        status: items.typeState.stateName
+        id: items.dg_id,
+        roomName: items.dg_roomName,
+        type: items.dt_description.split(' ')[0],
+        playersJoined: items.dg_playersJoined,
+        maxPlayers: items.dg_playersNumber,
+        roomCreatedBy: items.gp_nickName,
+        duelDateCreated: items.dg_duelDateCreated,
+        status: items.ds_stateName
       }
     });
 
