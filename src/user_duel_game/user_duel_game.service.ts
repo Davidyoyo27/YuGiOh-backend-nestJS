@@ -1,8 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { GameProfile } from '../game_profile/entities/game-profile.entity';
 import { UserDuelGame } from '../user_duel_game/entities/user_duel_game.entity';
 import { DuelState } from '../duel_game/entities/duel-state.entity';
 import { DuelGame } from '../duel_game/entities/duel-game.entity';
@@ -20,9 +19,6 @@ export class UserDuelGameService {
 
   constructor(
 
-    @InjectRepository(GameProfile)
-    private readonly userGameProfileRepository: Repository<GameProfile>,
-
     @InjectRepository(DuelGame)
     private readonly duelGameRepository: Repository<DuelGame>,
 
@@ -32,9 +28,49 @@ export class UserDuelGameService {
     private readonly dataSource: DataSource,
   ) { }
 
+  // valida que el jugador que desea "unirse a la sala del duelo" no este previamente en otro duelo activo
+  async validatePlayerExistsInRoomDuel(profileId: number) {
+
+    // buscamos si el jugador existe en algun duelo que no este finalizado,
+    // si es asi, ya se encuentra en una sala del duelo
+    const playerInDuel = await this.userDuelGameRepository.find({
+      where: {
+        gameProfile: { id: profileId },
+        finishedAt: IsNull()
+      },
+    });
+
+    // retornamos true si el jugador ya existe en alguna sala de duelo
+    if (playerInDuel.length > 0) return true;
+
+    // de lo contrario retornamos false
+    return false;
+  }
+
+  // funcion que retorna true o false si el jugador es el creador de la sala del duelo
+  async validatePlayerCreatorRoomDuel(profileId: number, roomId: number) {
+
+    const playerCreatorRoomDuel = await this.duelGameRepository.findOne({
+      where: {
+        id: roomId,
+        createdBy: { id: profileId },
+      }
+    });
+
+    // si el jugador no existe, no se encontro, por ende no es quien creo la sala del duelo
+    if(!playerCreatorRoomDuel) return false;
+    
+    // de lo contrario si es el creador
+    return true;
+  }
+
   // funcion que permite unirse a los jugadores
   // esta operacion ocupa transaction + lock
-  async joinDuel(id: number, userId: string) {
+  async joinDuel(id: number, profileId: string | number) {
+
+    if (typeof profileId !== 'number') throw new NotFoundException('Debes tener tu perfil de jugador para poder unirte a un duelo.');
+
+    let playerDuelCreator: boolean =  false;
 
     await this.dataSource.transaction(async (manager) => {
 
@@ -57,26 +93,27 @@ export class UserDuelGameService {
       if (duelGame.playersJoined >= duelGame.playersNumber)
         throw new BadRequestException('La sala ya se encuentra llena, no se permiten más jugadores.');
 
-      const userGameProfile = await this.userGameProfileRepository.findOne({
-        where: { user: { id: userId } }
-      });
-
-      if (!userGameProfile) throw new NotFoundException('Debes tener tu perfil de jugador para poder unirte a un duelo.');
-
       // ❌ evitar doble ingreso al mismo jugador
       const alreadyJoined = await manager.findOne(UserDuelGame, {
         where: {
           duelGame: { id: duelGame.id },
-          gameProfile: { id: userGameProfile.id }
+          gameProfile: { id: profileId }
         }
       });
 
       if (alreadyJoined) throw new BadRequestException('Ya estas unido a este duelo.');
 
+      const playerInActiveDuel = await this.validatePlayerExistsInRoomDuel(profileId);
+
+      if (playerInActiveDuel === true)
+        throw new BadRequestException('Ya te encuentras unido a una sala de duelo activa, no es posible unirte a otra sala.');
+
+      playerDuelCreator = await this.validatePlayerCreatorRoomDuel(profileId, id);
+
       // ✅ unir jugador
       await manager.save(UserDuelGame, {
         duelGame: { id: duelGame.id },
-        gameProfile: { id: userGameProfile.id },
+        gameProfile: { id: profileId },
         createdAt: new Date()
       });
 
@@ -105,7 +142,7 @@ export class UserDuelGameService {
       await manager.save(duelGame);
     });
 
-    return { ok: true, message: 'Te has unido exitosamente a la sala del duelo.' };
+    return { ok: true, isRoomDuelCreator: playerDuelCreator, message: 'Te has unido exitosamente a la sala del duelo.' };
   }
 
   // verifica que el jugador que esta intentado finalizar el duelo realmente pertenesca al duelo

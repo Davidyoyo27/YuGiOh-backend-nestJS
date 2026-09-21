@@ -17,9 +17,9 @@ export class UserDuelGameController {
   @Post(':id/join')
   joinDuel(
     @Param('id') id: number, // id de la "sala del duelo/partida creada por otro jugador"
-    @CurrentUserId('id') userId: string // id del jugador que se une
+    @CurrentUserId('profileId') profileId: string | number // id del jugador que se une
   ) {
-    return this.userDuelGameService.joinDuel(id, userId);
+    return this.userDuelGameService.joinDuel(id, profileId);
   }
 
   // endpoint de finalizacion del duelo
