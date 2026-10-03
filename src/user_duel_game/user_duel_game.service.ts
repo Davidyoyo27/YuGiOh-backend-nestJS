@@ -13,6 +13,7 @@ import { DataSource } from 'typeorm';
 import { error } from 'console';
 import { DuelResult } from 'src/common/utils/duel-result';
 import { CancelDuelDto } from 'src/duel_game/dto/cancel-duel.dto';
+import { GameProfile } from 'src/game_profile/entities/game-profile.entity';
 
 @Injectable()
 export class UserDuelGameService {
@@ -58,8 +59,8 @@ export class UserDuelGameService {
     });
 
     // si el jugador no existe, no se encontro, por ende no es quien creo la sala del duelo
-    if(!playerCreatorRoomDuel) return false;
-    
+    if (!playerCreatorRoomDuel) return false;
+
     // de lo contrario si es el creador
     return true;
   }
@@ -70,7 +71,7 @@ export class UserDuelGameService {
 
     if (typeof profileId !== 'number') throw new NotFoundException('Debes tener tu perfil de jugador para poder unirte a un duelo.');
 
-    let playerDuelCreator: boolean =  false;
+    let playerDuelCreator: boolean = false;
 
     await this.dataSource.transaction(async (manager) => {
 
@@ -265,7 +266,7 @@ export class UserDuelGameService {
       await manager.save(DuelGame, duelGame);
     });
 
-    return { ok: true, message: 'Duelo finalizado correctamente.' };
+    return { ok: true, message: 'Duelo finalizado.' };
   }
 
   // proceso de cancelacion del duelo (realizado solo por el creadro de la sala)
@@ -331,6 +332,48 @@ export class UserDuelGameService {
 
       return { ok: true, message: 'Duelo en proceso de cancelación. Se debe realizar la confirmación.' };
     });
+  }
+
+  async dataPlayersInDuel(profileId: string | number, duelId: number) {
+
+    // si el resultado de la variable profileId no es un number quiere decir que el usuario no tiene el perfil de jugador creado
+    if (typeof profileId !== 'number') throw new NotFoundException('No posees un perfil de jugador creado.');
+
+    // muestra de una sala del duelo, quien es el jugador que creo la sala y su oponente
+    const dataPlayers = await this.userDuelGameRepository
+      .createQueryBuilder('udg')
+      .innerJoin(
+        DuelGame,
+        'dg',
+        'udg."duelGameId" = dg.id'
+      )
+      .innerJoin(
+        GameProfile,
+        'gmp1',
+        'gmp1.id = udg."gameProfileId"'
+      )
+      .leftJoin(
+        UserDuelGame,
+        'udg2',
+        'udg2."duelGameId" = dg.id AND udg2."gameProfileId" <> gmp1.id'
+      )
+      .leftJoin(
+        GameProfile,
+        'gmp2',
+        'gmp2.id = udg2."gameProfileId"'
+      )
+      .select([
+        'dg.id AS "id"',
+        'gmp1.id AS "creatorId"',
+        'gmp1."nickName" AS "creatorNickName"',
+        'gmp2.id AS "opponentId"',
+        'gmp2."nickName" AS "opponentNickName"',
+      ])
+      .where('udg."duelGameId" = :duelGameId', { duelGameId: duelId })
+      .andWhere('udg."gameProfileId" = dg."createdById"')
+      .getRawOne();
+
+    return dataPlayers;
   }
 
 }
