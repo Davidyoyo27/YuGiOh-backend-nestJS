@@ -1,4 +1,4 @@
-import { Controller, Post, Param, UseGuards, Body, ParseIntPipe } from '@nestjs/common';
+import { Controller, Post, Param, UseGuards, Body, ParseIntPipe, Get } from '@nestjs/common';
 import { UserDuelGameService } from './user_duel_game.service';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
@@ -44,6 +44,16 @@ export class UserDuelGameController {
     @Body() cancelDuelDto: CancelDuelDto
   ){
     return this.userDuelGameService.cancelDuel(duelId, profileId, cancelDuelDto);
+  }
+
+  @UseGuards(AuthGuard(), RolesGuard)
+  @Roles(2)
+  @Get(':id/data-players-in-duel/')
+  dataPlayersInDuel(
+    @CurrentUserId('profileId') profileId: string | number,
+    @Param('id', ParseIntPipe) duelId: number, 
+  ){
+    return this.userDuelGameService.dataPlayersInDuel(profileId, duelId);
   }
 
 }
