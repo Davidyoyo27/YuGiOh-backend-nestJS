@@ -330,7 +330,12 @@ export class UserDuelGameService {
         .where('duelGameId = :duelId', { duelId })
         .execute();
 
-      return { ok: true, message: 'Duelo en proceso de cancelación. Se debe realizar la confirmación.' };
+      return {
+        ok: true,
+        message: (nextState === 4) ?
+          'El duelo fue cancelado exitosamente.' :
+          'Duelo en proceso de cancelación. Se debe realizar la confirmación.'
+      };
     });
   }
 
