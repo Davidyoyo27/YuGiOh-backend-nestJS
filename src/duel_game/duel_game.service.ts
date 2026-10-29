@@ -114,25 +114,56 @@ export class DuelGameService {
 
     if (typeof profileId !== 'number') throw new NotFoundException('No tienes un perfil de jugador creado.');
 
-    const duelGame = await this.duelGameRepository.find({
-      where: {
-        // por estado "verificando"
-        typeState: { id: 5 },
-        // solo los correspondientes a el usuario logeado
-        createdBy: { id: profileId }
-      }
-    });
+    const duels = await this.duelGameRepository
+      .createQueryBuilder('dg')
+      .innerJoin(
+        UserDuelGame,
+        'udg',
+        'udg."duelGameId" = dg.id'
+      )
+      .innerJoin(
+        GameProfile,
+        'opponent',
+        'opponent.id = udg."gameProfileId"'
+      )
+      .innerJoin(
+        GameProfile,
+        'creator',
+        'creator.id = dg."createdById"'
+      )
+      .innerJoin(
+        DuelType,
+        'dt',
+        'dt.id=dg."typeDuelId"'
+      )
+      .select([
+        'dg.id AS "duelGameId"',
+        'dt."description" AS "typeDuel"',
+        'dg.typeDuel',
+        'dg."duelDateFinished" AS "duelDateFinished"',
+        'dg."cancellationRequestedAt" AS "cancellationRequestedAt"',
+        'dg."cancelReason" AS "cancelReason"',
+        'creator.id AS "creatorId"',
+        'creator."nickName" AS "creatorNickName"',
+        'opponent.id AS "opponentId"',
+        'opponent."nickName" AS "opponentNickName"',
+      ])
+      .where('dg."typeStateId" = :stateId', { stateId: 5 })
+      .andWhere('opponent.id = :profileId', { profileId })
+      .andWhere('opponent.id <> creator.id')
+      .orderBy('dg.id', 'DESC')
+      .getRawMany();
 
     // si no se encuentra ningun duelo cancelado hacia el jugador muestra la siguiente validacion
-    if (duelGame.length === 0) return { ok: true, message: 'No se encontro ningún duelo cancelado.' };
+    if (duels.length === 0) throw new NotFoundException('No se encontro ningún duelo en proceso de cancelación.');
 
-    const duelsCanceled = duelGame.map(duels => {
+    const duelsCanceled = duels.map(duels => {
       return {
-        id: duels.id,
-        typeDuel: duels.typeDuel.description.split(' ')[0],
+        id: duels.duelGameId,
+        typeDuel: duels.typeDuel.split(' ')[0],
         dateFinished: duels.duelDateFinished,
-        typeState: duels.typeState.stateName,
-        canceledBy: duels.createdBy.nickName,
+        cancellationRequestedAt: duels.cancellationRequestedAt,
+        canceledBy: duels.creatorNickName,
         cancelReason: duels.cancelReason,
       }
     });
