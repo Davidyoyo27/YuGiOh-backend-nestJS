@@ -32,6 +32,13 @@ export class DuelGame {
     })
     duelDateFinished!: Date | null;
 
+    @Column({
+        type: 'timestamp',
+        precision: 6,
+        nullable: true
+    })
+    cancellationRequestedAt!: Date | null;
+
     // relacion
     @ManyToOne(
         () => DuelType,

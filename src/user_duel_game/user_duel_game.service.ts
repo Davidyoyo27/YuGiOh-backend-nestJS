@@ -297,6 +297,8 @@ export class UserDuelGameService {
       let allowedState: number;
       (duelGame.playersJoined === 1) ? allowedState = 1 : allowedState = 2;
 
+      const dateCancelatedAt: Date = new Date();
+
       // IMPORANTE: aqui se produce directamente la actualizacion y guardado del dato al instante
       // update atomico del DuelGame
       // 1️⃣ Update condicional atómico
@@ -306,8 +308,9 @@ export class UserDuelGameService {
         // set: actualiza a (los campos typeState y duelDateFinished)
         .set({
           typeState: { id: nextState },
-          duelDateFinished: nextState === 4 ? new Date() : null,
-          cancelReason
+          duelDateFinished: nextState === 4 ? dateCancelatedAt : null,
+          cancellationRequestedAt: dateCancelatedAt,
+          cancelReason,
         })
         .where('id = :duelId', { duelId })
         // solo si el typeStateId es
@@ -317,14 +320,12 @@ export class UserDuelGameService {
       // 2️⃣ Si no afectó filas → ya no estaba en VERIFYING
       if (updateResult.affected === 0) throw new BadRequestException('El duelo ya no está en estado válido para cancelación.');
 
-      const finishedAt: Date = new Date();
-
       // update atomico del UserDuelGame
       await manager
         .createQueryBuilder()
         .update(UserDuelGame)
         .set({
-          finishedAt: finishedAt,
+          finishedAt: dateCancelatedAt,
           result: nextState === 4 ? DuelResult.CANCELED : DuelResult.VERIFYING
         })
         .where('duelGameId = :duelId', { duelId })
