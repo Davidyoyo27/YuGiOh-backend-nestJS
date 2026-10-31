@@ -8,7 +8,8 @@ import { Roles } from 'src/auth/decorators/roles.decorator';
 export class StorageController {
   constructor(private readonly storageService: StorageService) { }
 
-  @UseGuards(AuthGuard(), RolesGuard)
+  // no es necesario el RolesGuard, puesto que si ya esta autenticado es suficiente
+  @UseGuards(AuthGuard())
   @Roles(2)
   @Get('default-avatars')
   defaultAvatarsPerfil() {
