@@ -614,7 +614,7 @@ export class AuthService {
                 userName: userDB.name,
                 lastName: userDB.lastName,
                 email: userDB.email,
-                role: userDB.typeUser.id,
+                role: userDB.typeUser,
                 profileId: userDB.gameProfile?.id ?? null,
                 nickName: userDB.gameProfile?.nickName ?? null,
                 createdAt: userDB.gameProfile?.createdAt ?? null,
