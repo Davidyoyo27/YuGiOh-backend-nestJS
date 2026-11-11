@@ -93,10 +93,10 @@ export class AdminService {
     });
 
     if (!user) {
-      throw new NotFoundException(`El usuario con id ${id} no existe.`);
+      throw new NotFoundException(`El usuario no existe.`);
     }
 
-    if (user.isActive === false) throw new BadRequestException('No se puede bloquear al usuario ya que su cuenta ya esta innactiva.');
+    if (user.isActive === false) throw new BadRequestException('No se puede bloquear al usuario ya que su cuenta ya esta inactiva.');
 
     // modificamos solo el campo recibido
     user.isActive = false;
@@ -104,6 +104,25 @@ export class AdminService {
     await this.userRepository.save(user);
 
     return { ok: true, message: 'Cuenta de usuario bloqueada correctamente.' }
+  }
+
+  async unlockUserAccount(id: string) {
+    const user = await this.userRepository.findOne({
+      where: { id },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`El usuario no existe.`);
+    }
+
+    if (user.isActive === true) throw new BadRequestException('No se puede desbloquear al usuario ya que su cuenta ya esta activa.');
+
+    // modificamos solo el campo recibido
+    user.isActive = true;
+    // guardamos los cambios
+    await this.userRepository.save(user);
+
+    return { ok: true, message: 'Cuenta de usuario desbloqueada correctamente.' }
   }
 
   private handleDBException(error: any): never {
