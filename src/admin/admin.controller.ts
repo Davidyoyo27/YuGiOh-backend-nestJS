@@ -31,11 +31,10 @@ export class AdminController {
   @UseGuards( AuthGuard(), RolesGuard )
   @Roles(3)
   @Patch('administrator/block-user-account/:id')
-  blockUser(
+  blockUserAccount(
     @Param('id', new UuidValidationPipe()) id: string,
-    @Body() updateUserByAdminDto: UpdateUserByAdminDto
   ){
-    return this.adminService.blockUserAdmin(id, updateUserByAdminDto);
+    return this.adminService.blockUserAccount(id);
   }
 
 }
