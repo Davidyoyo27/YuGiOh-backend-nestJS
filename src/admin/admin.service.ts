@@ -10,6 +10,7 @@ import { EmailService } from '../email/email.service';
 import { UpdateUserByAdminDto } from './dto/update-user-by-admin.dto';
 import { UserResponseDto } from 'src/user/dto/user-response.dto';
 import { plainToInstance } from 'class-transformer';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AdminService {
@@ -21,6 +22,8 @@ export class AdminService {
     private readonly userRepository: Repository<User>,
 
     private readonly emailService: EmailService,
+
+    private readonly configService: ConfigService,
   ) { }
 
   async findAllUsersAdmin() {
@@ -29,6 +32,7 @@ export class AdminService {
       const users = await this.userRepository.createQueryBuilder('user')
         .leftJoin('user.typeUser', 'typeUser')
         .select([
+          'user.id',
           'user.email',
           'user.name',
           'user.lastName',
@@ -59,13 +63,23 @@ export class AdminService {
     user.activationCodeExpires = newTimeExpiration;
 
     await this.userRepository.save(user);
+
+    // Obtener URL del frontend desde la configuración.
+    const frontendUrl = this.configService.get<string>('frontend.url');
+
+    if (!frontendUrl) throw new Error('La variable FRONTEND_URL no está configurada.');
+
+    // Construir enlace de activación.
+    const activationUrl = `${frontendUrl.replace(/\/$/, '')}/account_activation?code=${encodeURIComponent(newCode)}`;
+
     await this.emailService.sendMail(
       user.email,
-      'Bienvenido Duelista - Reenvio de código activación de cuenta',
+      'Bienvenido Duelista - Reenvío de código activación de cuenta',
       'resend-email-activation',
       {
         name: user.name,
         code: user.activationCode,
+        activationUrl,
       },
     );
 
