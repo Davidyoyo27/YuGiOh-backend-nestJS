@@ -37,4 +37,13 @@ export class AdminController {
     return this.adminService.blockUserAccount(id);
   }
 
+  @UseGuards( AuthGuard(), RolesGuard )
+  @Roles(3)
+  @Patch('administrator/unlock-user-account/:id')
+  unlockUserAccount(
+    @Param('id', new UuidValidationPipe()) id: string,
+  ){
+    return this.adminService.unlockUserAccount(id);
+  }
+
 }
