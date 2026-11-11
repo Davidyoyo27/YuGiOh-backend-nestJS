@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { AuthGuard } from '@nestjs/passport';
 import { UuidValidationPipe } from 'src/common/pipes/uuid-validation.pipe';
@@ -22,7 +22,7 @@ export class AdminController {
 
   @UseGuards( AuthGuard(), RolesGuard )
   @Roles(3)
-  @Get('administrator/:id/resend-activation')
+  @Post('administrator/:id/resend-activation')
   //                                validacion personalizada para el UUID
   checkUserToSendEmail(@Param('id', new UuidValidationPipe()) id: string){
     return this.adminService.resendActivationEmail(id);
