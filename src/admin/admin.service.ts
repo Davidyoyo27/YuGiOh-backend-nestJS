@@ -86,7 +86,7 @@ export class AdminService {
     return { ok: true, message: 'Correo de activación reenviado.' }
   }
 
-  async blockUserAdmin(id: string, updateUserByAdminDto: UpdateUserByAdminDto): Promise<UserResponseDto> {
+  async blockUserAccount(id: string) {
 
     const user = await this.userRepository.findOne({
       where: { id },
@@ -96,16 +96,14 @@ export class AdminService {
       throw new NotFoundException(`El usuario con id ${id} no existe.`);
     }
 
+    if (user.isActive === false) throw new BadRequestException('No se puede bloquear al usuario ya que su cuenta ya esta innactiva.');
+
     // modificamos solo el campo recibido
-    user.isActive = updateUserByAdminDto.isActive;
+    user.isActive = false;
     // guardamos los cambios
     await this.userRepository.save(user);
 
-    // devolvemos solo los campos que se desean visualizar
-    return plainToInstance(UserResponseDto, user, {
-      // habilita el @Expose() en el responseDTO
-      excludeExtraneousValues: true,
-    });
+    return { ok: true, message: 'Cuenta de usuario bloqueada correctamente.' }
   }
 
   private handleDBException(error: any): never {
