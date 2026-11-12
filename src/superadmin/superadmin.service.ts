@@ -142,11 +142,12 @@ export class SuperadminService {
       const users = await this.userRepository.createQueryBuilder('user')
         .leftJoin('user.typeUser', 'typeUser')
         .select([
+          'user.id',
           'user.email',
           'user.name',
           'user.lastName',
           'user.isActive',
-          'typeUser.typeName',
+          'typeUser',
         ])
         .where('user.typeUserId IN (:...id)', { id: finalIds })
         .getMany();
