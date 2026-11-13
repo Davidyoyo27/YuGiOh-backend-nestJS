@@ -192,6 +192,19 @@ export class SuperadminService {
     return { ok: true, message: 'Cuenta de usuario bloqueada correctamente.' }
   }
 
+  async unlockUserAccount(id: string) {
+    const user = await this.userRepository.findOne({ where: { id } });
+
+    if (!user) throw new NotFoundException(`El usuario no existe.`);
+    if (user?.typeUser.id === 4) throw new BadRequestException('No es posible modificar este usuario');
+    if (user.isActive === true) throw new BadRequestException('No se puede desbloquear al usuario ya que su cuenta ya esta activa.');
+
+    user.isActive = true;
+    await this.userRepository.save(user);
+
+    return { ok: true, message: 'Cuenta de usuario desbloqueada correctamente.' }
+  }
+
   async userFinishAllActiveSession(idUser: string) {
 
     await this.userSessionRepository.update(
