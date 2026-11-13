@@ -59,6 +59,16 @@ export class SuperadminController {
     return this.superadminService.blockUserAccount(id);
   }
 
+  // bloquear usuarios de tipo Administrador y/o Duelista
+  @UseGuards( AuthGuard(), RolesGuard )
+  @Roles(4)
+  @Patch('superadministrator/unlock-user-account/:id')
+  unlockUserAccount(
+    @Param('id', new UuidValidationPipe()) id: string,
+  ){
+    return this.superadminService.unlockUserAccount(id);
+  }
+
   // cerrar todas las sesiones de un usuario
   @UseGuards( AuthGuard(), RolesGuard )
   @Roles(4)
