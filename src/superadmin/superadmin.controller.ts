@@ -55,9 +55,8 @@ export class SuperadminController {
   @Patch('superadministrator/block-user-account/:id')
   blockUserAccount(
     @Param('id', new UuidValidationPipe()) id: string,
-    @Body() updateUserByAdminDto: UpdateUserByAdminDto
   ){
-    return this.superadminService.blockUserAccount(id, updateUserByAdminDto);
+    return this.superadminService.blockUserAccount(id);
   }
 
   // cerrar todas las sesiones de un usuario

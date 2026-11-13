@@ -179,20 +179,17 @@ export class SuperadminService {
     });
   }
 
-  async blockUserAccount(id: string, updateUserByAdminDto: UpdateUserByAdminDto) {
+  async blockUserAccount(id: string) {
     const user = await this.userRepository.findOne({ where: { id } });
 
-    if (!user) throw new NotFoundException(`El usuario con el id ${id} no existe.`);
+    if (!user) throw new NotFoundException(`El usuario no existe.`);
     if (user?.typeUser.id === 4) throw new BadRequestException('No es posible modificar este usuario');
+    if (user.isActive === false) throw new BadRequestException('No se puede bloquear al usuario ya que su cuenta ya esta inactiva.');
 
-    user.isActive = updateUserByAdminDto.isActive;
+    user.isActive = false;
     await this.userRepository.save(user);
 
-    // devolvemos solo los campos que se desean visualizar
-    return plainToInstance(UserResponseDto, user, {
-      // habilita el @Expose() en el responseDTO
-      excludeExtraneousValues: true,
-    });
+    return { ok: true, message: 'Cuenta de usuario bloqueada correctamente.' }
   }
 
   async userFinishAllActiveSession(idUser: string) {
