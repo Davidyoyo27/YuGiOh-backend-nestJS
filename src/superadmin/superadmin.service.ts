@@ -212,12 +212,21 @@ export class SuperadminService {
       { status: false }                       // actualizacion
     )
 
-    return { message: 'Todas las sesiones del usuario han sido cerradas.' };
+    return { ok: true, message: 'Todas las sesiones del usuario han sido cerradas.' };
   }
 
-  async userFinishActiveSession(idSession: number) {
+  async userFinishActiveSession(id: string) {
 
-    const session = await this.userSessionRepository.findOne({ where: { id: idSession } });
+    const sessions = await this.userSessionRepository.find({
+      where: { user: { id }, status: true },
+      order: { id: 'DESC' }
+    });
+
+    if(sessions.length === 0) throw new NotFoundException('No se encontraron sesiones activas para el usuario.');
+
+    const lastUserSession = sessions[0].id
+
+    const session = await this.userSessionRepository.findOne({ where: { id: lastUserSession } });
 
     if (!session) throw new NotFoundException('La sesion no existe.');
     if (session.status === false) throw new NotFoundException('La sesion ingresada ya se encuentra cerrada.');
@@ -225,11 +234,7 @@ export class SuperadminService {
     session.status = false;
     await this.userSessionRepository.save(session);
 
-    return {
-      ok: true,
-      message: 'Sesion finalizada correctamente.',
-      sessionId: idSession,
-    }
+    return { ok: true, message: 'Sesion finalizada correctamente.' }
   }
 
   // traer lista de intentos de login de los usuarios
