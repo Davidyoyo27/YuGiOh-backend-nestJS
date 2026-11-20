@@ -84,7 +84,7 @@ export class SuperadminController {
   @Roles(4)
   @Patch('superadministrator/finish-user-session/:id')
   userFinishActiveSession(
-    @Param('id', OnlyNumbersPipe) id: number,
+    @Param('id', new UuidValidationPipe()) id: string,
   ){
     return this.superadminService.userFinishActiveSession(id);
   }
